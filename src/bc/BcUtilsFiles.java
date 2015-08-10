@@ -729,6 +729,10 @@ public class BcUtilsFiles {
 
     private static File mkFile(File base, String ext) {
         RedFilePanel panel = new RedFilePanel(base, ext);
+        File file = panel.getOvwFile();
+        if (!file.exists())
+            return file;
+
         int ret = JOptionPane.showConfirmDialog(null,
                 panel, "",
                 JOptionPane.OK_CANCEL_OPTION,
@@ -814,6 +818,10 @@ public class BcUtilsFiles {
             box2.setAlignmentX(Component.LEFT_ALIGNMENT);
             add(box1);
             add(box2);
+        }
+
+        public File getOvwFile() {
+            return ovwFile;
         }
 
         public File getSelectedFile() {

@@ -96,8 +96,8 @@ public class Text {
         dictionary.put("no_known_key", "no known key");
         dictionary.put("no_libraries", "libraries no found (jar)");
         dictionary.put("no_signed_file", "no signed file");
-        dictionary.put("overwrite", "sobreescribir");
-        dictionary.put("password", "overwite");
+        dictionary.put("overwrite", "overwrite");
+        dictionary.put("password", "password");
         dictionary.put("process", "process");
         dictionary.put("public_keys", "public keys");
         dictionary.put("refresh", "refresh");
