@@ -17,7 +17,6 @@ import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
@@ -133,6 +132,9 @@ public class MyPGP {
         boolean listsExpanded = keysTree.isExpanded(new TreePath(listsBranch.getPath()));
         boolean directoryExpanded = keysTree.isExpanded(new TreePath(directoryBranch.getPath()));
 
+        Set<Directory> expandedDirectories = new HashSet<Directory>();
+        readExpandedDirectories(expandedDirectories, directoryBranch);
+
         KeyDB2.getInstance().reset();
         directory = Directory.load(Info.getHome());
         Info.loadInfo();
@@ -153,6 +155,7 @@ public class MyPGP {
             keysTree.expandPath(new TreePath(listsBranch.getPath()));
         if (directoryExpanded)
             keysTree.expandPath(new TreePath(directoryBranch.getPath()));
+        expandDirectories(expandedDirectories, directoryBranch);
         keysPanel.revalidate();
 
         secKeyBranch.removeAllChildren();
@@ -160,6 +163,33 @@ public class MyPGP {
             secKeyBranch.add(mkTreeKey(key));
 
         keysPanel.revalidate();
+    }
+
+    private void readExpandedDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
+        Object object = node.getUserObject();
+        if (!(object instanceof Directory))
+            return;
+        if (keysTree.isExpanded(new TreePath(node.getPath()))) {
+            directories.add((Directory) object);
+            for (int i = 0; i < node.getChildCount(); i++) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+                readExpandedDirectories(directories, child);
+            }
+        }
+    }
+
+    private void expandDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
+        Object object = node.getUserObject();
+        if (!(object instanceof Directory))
+            return;
+        Directory directory = (Directory) object;
+        if (!directories.contains(directory))
+            return;
+        keysTree.expandPath(new TreePath(node.getPath()));
+        for (int i = 0; i < node.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+            expandDirectories(directories, child);
+        }
     }
 
     private void expandAll(JTree tree) {
@@ -218,9 +248,10 @@ public class MyPGP {
      * @return tree structure for this key, and signing keys.
      */
     private DefaultMutableTreeNode mkTreeKey(Key key, Set<Long> hierarchy) {
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(key);
-        node.add(new DefaultMutableTreeNode(key.getCorePresentation()));
-        node.add(new DefaultMutableTreeNode(key.getIdFingerprint()));
+        DefaultMutableTreeNode keyNode = new DefaultMutableTreeNode(key);
+        keyNode.add(new DefaultMutableTreeNode(key.getCorePresentation()));
+        DefaultMutableTreeNode detailNode = new DefaultMutableTreeNode(key.getIdFingerprint());
+        keyNode.add(detailNode);
         PGPPublicKey publicKey = key.getPublicKey();
         PGPPublicKey encryptingKey = key.getEncryptingKey();
         StringBuilder builder = new StringBuilder();
@@ -230,14 +261,16 @@ public class MyPGP {
             builder.append(" / ")
                     .append(ToString.publicKey(encryptingKey.getAlgorithm()))
                     .append(" (").append(getBits(encryptingKey)).append(")");
-        node.add(new DefaultMutableTreeNode(builder.toString()));
+        detailNode.add(new DefaultMutableTreeNode(builder.toString()));
+
+        detailNode.add(mkEncryptionAlgorithms(publicKey));
 
         List<Long> signerList = key.getSigIds();
         if (signerList.size() > 0) {
             Set<Long> extHierarchy = new HashSet<Long>(hierarchy);
             extHierarchy.addAll(signerList);
             DefaultMutableTreeNode signers = new DefaultMutableTreeNode(Text.get("signers") + " ...");
-            node.add(signers);
+            keyNode.add(signers);
             for (Long sid : signerList) {
                 Key signerKey = KeyDB2.getInstance().getKey(sid);
                 if (signerKey == null)
@@ -248,7 +281,23 @@ public class MyPGP {
                     signers.add(mkTreeKey(signerKey, extHierarchy));
             }
         }
-        return node;
+        return keyNode;
+    }
+
+    private DefaultMutableTreeNode mkEncryptionAlgorithms(PGPPublicKey publicKey) {
+        // encryption algorithms
+        int[] algos = AlgorithmSelection.getPreferredEncryptionAlgos(publicKey);
+        if (algos == null || algos.length <= 0)
+            return null;
+        StringBuilder sb = new StringBuilder(Text.get("encrypt"));
+        for (int i = 0; i < algos.length; i++) {
+            if (i == 0)
+                sb.append(": ");
+            else
+                sb.append(", ");
+            sb.append(ToString.symmetricKey(algos[i]));
+        }
+        return new DefaultMutableTreeNode(sb.toString());
     }
 
     private int getBits(PGPPublicKey publicKey) {

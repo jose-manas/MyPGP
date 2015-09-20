@@ -5,5 +5,5 @@ package gui;
  * @version 16.5.2011
  */
 public class Version {
-    public static final String VERSION = "MyPGP (4.8.2015)";
+    public static final String VERSION = "MyPGP (19.9.2015)";
 }

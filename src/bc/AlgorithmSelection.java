@@ -62,7 +62,7 @@ public class AlgorithmSelection {
         return SymmetricKeyAlgorithmTags.TRIPLE_DES;
     }
 
-    private static int[] getPreferredEncryptionAlgos(PGPPublicKey key) {
+    public static int[] getPreferredEncryptionAlgos(PGPPublicKey key) {
         List<PGPSignatureSubpacketVector> svList = getSignatureSubpacketVectors(key);
         for (PGPSignatureSubpacketVector sv : svList) {
             int[] algos = sv.getPreferredSymmetricAlgorithms();

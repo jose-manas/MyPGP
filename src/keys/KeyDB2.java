@@ -4,10 +4,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 
 import java.io.PrintWriter;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 // 22.5.2011 alias
 // 24.6.2011 signatures
@@ -78,7 +75,9 @@ public class KeyDB2 {
     }
 
     void saveKeys(PrintWriter writer) {
-        for (Key key : keys.values()) {
+        Set<Key> unique = new HashSet<Key>();
+        unique.addAll(keys.values());
+        for (Key key : unique) {
             if (key.hasAlias())
                 writer.printf("alias.%s= %s%n", key.getKid(), key.getAlias());
         }

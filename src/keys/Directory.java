@@ -22,15 +22,16 @@ public class Directory {
             return name1.compareToIgnoreCase(name2);
         }
     };
+    private final File file;
+    private final String name;
 
-    private String name;
     private List<File> children = new ArrayList<File>();
     private Collection<Directory> subdirs = new TreeSet<Directory>(DIR_COMPARATOR);
-    private Collection<Key> keys = new TreeSet<Key>(Key.KEY_COMPARATOR);
+    private Collection<Key> keys = new HashSet<Key>();
     private Map<File, Collection<Key>> keyloadlog = new HashMap<File, Collection<Key>>();
 
     public static Directory load(File file) {
-        Directory directory = new Directory(file.getName());
+        Directory directory = new Directory(file);
         File[] files = file.listFiles();
         if (files == null || files.length == 0)
             return directory;
@@ -152,8 +153,9 @@ public class Directory {
         return children.isEmpty() && subdirs.isEmpty();
     }
 
-    public Directory(String name) {
-        this.name = name;
+    public Directory(File file) {
+        this.file = file;
+        this.name = file.getName();
     }
 
     @Override
@@ -166,7 +168,9 @@ public class Directory {
     }
 
     public Collection<Key> getKeys() {
-        return keys;
+        Collection<Key> sorted = new TreeSet<Key>(Key.KEY_COMPARATOR);
+        sorted.addAll(keys);
+        return sorted;
     }
 
     public void addKeys(List<Key> keyList) {
@@ -189,5 +193,20 @@ public class Directory {
         }
         for (Directory directory : getSubdirs())
             directory.dumpLog(builder);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        Directory directory = (Directory) o;
+        return file.equals(directory.file);
+    }
+
+    @Override
+    public int hashCode() {
+        return file.hashCode();
     }
 }
