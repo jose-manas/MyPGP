@@ -1,8 +1,10 @@
 package keys;
 
+import gui.Text;
+
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.TreeSet;
+import java.text.Collator;
+import java.util.*;
 
 // 28.6.2011 delay ordering to prevent alias changes
 
@@ -16,7 +18,8 @@ public class KeyList
 
     private int uid;
     private String name;
-    private Collection<Key> members = new TreeSet<Key>(Key.KEY_COMPARATOR);
+//    private Collection<Key> members = new TreeSet<Key>(Key.KEY_COMPARATOR);
+    private Collection<Key> members = new HashSet<Key>();
 
     public KeyList(int uid, String name) {
         this.uid = uid;
@@ -38,8 +41,18 @@ public class KeyList
         this.name = name;
     }
 
-    public Collection<Key> getMembers() {
-        return members;
+    public Collection<Key> getMembers(boolean sort) {
+        if (!sort)
+            return members;
+
+        Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
+            Collator collator = Collator.getInstance(Text.getLocale());
+            public int compare(Key key1, Key key2) {
+                return collator.compare(key1.toString(), key2.toString());
+            }
+        });
+        sorted.addAll(members);
+        return sorted;
     }
 
     public void add(Key key) {

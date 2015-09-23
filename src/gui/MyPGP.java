@@ -221,7 +221,7 @@ public class MyPGP {
 
     private DefaultMutableTreeNode mkTreeList(KeyList list) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(list);
-        for (Key key : list.getMembers())
+        for (Key key : list.getMembers(true))
             node.add(mkTreeKey(key));
         return node;
     }
@@ -573,7 +573,7 @@ public class MyPGP {
                 keys.add((Key) object);
             } else if (object.getClass() == KeyList.class) {
                 KeyList list = (KeyList) object;
-                for (Key key : list.getMembers())
+                for (Key key : list.getMembers(false))
                     keys.add(key);
 
             } else if (object.getClass() == Directory.class) {

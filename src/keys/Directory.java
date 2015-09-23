@@ -2,12 +2,14 @@ package keys;
 
 import bc.PemSplitter;
 import gui.MyPGP;
+import gui.Text;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.Collator;
 import java.util.*;
 
 /**
@@ -168,7 +170,13 @@ public class Directory {
     }
 
     public Collection<Key> getKeys() {
-        Collection<Key> sorted = new TreeSet<Key>(Key.KEY_COMPARATOR);
+//        Collection<Key> sorted = new TreeSet<Key>(Key.KEY_COMPARATOR);
+        Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
+            Collator collator = Collator.getInstance(Text.getLocale());
+            public int compare(Key key1, Key key2) {
+                return collator.compare(key1.toString(), key2.toString());
+            }
+        });
         sorted.addAll(keys);
         return sorted;
     }

@@ -34,7 +34,7 @@ public class BcUtilsFiles {
     private static final int BUFFER_SIZE = 1 << 16;
 
     public static void encrypt(File redFile, List<Key> publicKeys)
-            throws IOException, PGPException {
+            throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
         MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
@@ -42,13 +42,13 @@ public class BcUtilsFiles {
         boolean armor = true;
         boolean withIntegrityCheck = true;
 
-        OutputStream os = null;
+        File blackFile = null;
         OutputStream out = null;
         try {
-            File blackFile = mkFile(redFile, ".asc");
+            blackFile = mkFile(redFile, ".asc");
             if (blackFile == null)
                 return;
-            os = new BufferedOutputStream(new FileOutputStream(blackFile));
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
             out = os;
             if (armor) {
                 ArmoredOutputStream aos = new ArmoredOutputStream(os);
@@ -101,17 +101,23 @@ public class BcUtilsFiles {
             compressedDataGenerator.close();
             encryptedData.close();
             encryptedDataGenerator.close();
-        } finally {
+
             close(out);
-            close(os);
+        } catch (Exception e) {
+            forget(blackFile, out);
+            throw e;
+
+//        } finally {
+//            close(out);
+//            close(os);
         }
     }
 
     public static void sign(File inFile, Key signerKey, char[] password)
-            throws IOException, PGPException {
+            throws Exception {
         boolean armor = false;
 
-        OutputStream os = null;
+        File outFile = null;
         OutputStream out = null;
         try {
             PGPSecretKey secretKey = signerKey.getSigningKey();
@@ -120,8 +126,8 @@ public class BcUtilsFiles {
             if (privateKey == null)
                 return;
 
-            File outFile = mkFile(inFile, ".sig");
-            os = new BufferedOutputStream(new FileOutputStream(outFile));
+            outFile = mkFile(inFile, ".sig");
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
             out = os;
             if (armor) {
                 ArmoredOutputStream aos = new ArmoredOutputStream(os);
@@ -156,19 +162,25 @@ public class BcUtilsFiles {
             BCPGOutputStream bOut = new BCPGOutputStream(out);
             signatureGenerator.generate().encode(bOut);
             bOut.close();
-        } finally {
+
             close(out);
-            close(os);
+        } catch (Exception e) {
+            forget(outFile, out);
+            throw e;
+
+//        } finally {
+//            close(out);
+//            close(os);
         }
     }
 
     public static void sign(File inFile,
                             List<Key> signerKeyList,
                             Map<Key, char[]> passwords)
-            throws IOException, PGPException {
+            throws Exception {
         boolean armor = false;
 
-        OutputStream os = null;
+        File outFile = null;
         OutputStream out = null;
         try {
             PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
@@ -185,8 +197,8 @@ public class BcUtilsFiles {
                 privateKeys[i] = privateKey;
             }
 
-            File outFile = mkFile(inFile, ".sig");
-            os = new BufferedOutputStream(new FileOutputStream(outFile));
+            outFile = mkFile(inFile, ".sig");
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
             out = os;
             if (armor) {
                 ArmoredOutputStream aos = new ArmoredOutputStream(os);
@@ -227,9 +239,15 @@ public class BcUtilsFiles {
                 signatureGenerator.generate().encode(bOut);
             }
             bOut.close();
-        } finally {
+
             close(out);
-            close(os);
+        } catch (Exception e) {
+            forget(outFile, out);
+            throw e;
+
+//        } finally {
+//            close(out);
+//            close(os);
         }
     }
 
@@ -345,7 +363,7 @@ public class BcUtilsFiles {
                                     List<Key> signerKeyList,
                                     List<Key> encryptingKeys,
                                     Map<Key, char[]> passwords)
-            throws IOException, PGPException {
+            throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
         MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
@@ -353,7 +371,7 @@ public class BcUtilsFiles {
         boolean armor = true;
         boolean withIntegrityCheck = true;
 
-        OutputStream os = null;
+        File blackFile = null;
         OutputStream out = null;
         try {
             PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
@@ -370,10 +388,10 @@ public class BcUtilsFiles {
                 privateKeys[i] = privateKey;
             }
 
-            File blackFile = mkFile(redFile, ".asc");
+            blackFile = mkFile(redFile, ".asc");
             if (blackFile == null)
                 return;
-            os = new BufferedOutputStream(new FileOutputStream(blackFile));
+            OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
             out = os;
             if (armor) {
                 ArmoredOutputStream aos = new ArmoredOutputStream(os);
@@ -460,9 +478,15 @@ public class BcUtilsFiles {
             compressedDataGenerator.close();
             encryptedData.close();
             encryptedDataGenerator.close();
-        } finally {
+
             close(out);
-            close(os);
+        } catch (Exception e) {
+            forget(blackFile, out);
+            throw e;
+
+        } finally {
+//            close(out);
+//            close(os);
         }
     }
 
@@ -785,6 +809,18 @@ public class BcUtilsFiles {
             return;
         try {
             os.close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void forget(File file, OutputStream os) {
+        try {
+            os.close();
+        } catch (Exception ignored) {
+        }
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            file.delete();
         } catch (Exception ignored) {
         }
     }

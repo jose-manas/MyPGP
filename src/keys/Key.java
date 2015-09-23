@@ -21,13 +21,13 @@ import java.util.*;
  */
 public class Key
         implements Comparable {
-    public static final Comparator<Key> KEY_COMPARATOR = new Comparator<Key>() {
-        public int compare(Key key1, Key key2) {
-            String name1 = key1.toString();
-            String name2 = key2.toString();
-            return name1.compareToIgnoreCase(name2);
-        }
-    };
+//    public static final Comparator<Key> KEY_COMPARATOR = new Comparator<Key>() {
+//        public int compare(Key key1, Key key2) {
+//            String name1 = key1.toString();
+//            String name2 = key2.toString();
+//            return name1.compareToIgnoreCase(name2);
+//        }
+//    };
 
     private static final int[] MASTER_KEY_CERTIFICATION_TYPES = new int[]{
             PGPSignature.POSITIVE_CERTIFICATION,

@@ -1,9 +1,11 @@
 package keys;
 
+import gui.Text;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 
 import java.io.PrintWriter;
+import java.text.Collator;
 import java.util.*;
 
 // 22.5.2011 alias
@@ -41,7 +43,13 @@ public class KeyDB2 {
     }
 
     public Set<Key> getSecretKeys() {
-        Set<Key> keySet = new TreeSet<Key>(Key.KEY_COMPARATOR);
+//        Set<Key> keySet = new TreeSet<Key>(Key.KEY_COMPARATOR);
+        Set<Key> keySet = new TreeSet<Key>(new Comparator<Key>() {
+            Collator collator = Collator.getInstance(Text.getLocale());
+            public int compare(Key key1, Key key2) {
+                return collator.compare(key1.toString(), key2.toString());
+            }
+        });
         for (Key key : keys.values()) {
             if (key.isSecret())
                 keySet.add(key);
