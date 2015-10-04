@@ -376,6 +376,7 @@ public class BcUtilsClipboard {
         int signAlgo = signature.getKeyAlgorithm();
         int hashAlgo = signature.getHashAlgorithm();
         BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getInstance().getKey(signature.getKeyID());
         if (key == null) {

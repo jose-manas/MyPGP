@@ -623,6 +623,7 @@ public class BcUtilsFiles {
         int hashAlgo = signature.getHashAlgorithm();
         int signAlgo = signature.getKeyAlgorithm();
         BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getInstance().getKey(signature.getKeyID());
         if (key == null) {
@@ -682,7 +683,7 @@ public class BcUtilsFiles {
 
             if (x instanceof PGPEncryptedDataList) {
                 File redFile = mkRedFile(blackFile);
-                if (redFile == null || redFile.exists())
+                if (redFile == null)
                     redFile = new File(blackFile.getParent(), "mypgp.out");
                 decrypt(redFile, blackFile, passwords);
                 return;
@@ -690,9 +691,10 @@ public class BcUtilsFiles {
 
             if (x instanceof PGPSignatureList) {
                 File redFile = mkRedFile(blackFile);
+                String filenameString = redFile == null ? "no" : redFile.getName();
                 BcUtils.log1(String.format("%s == %s(%s) :",
-                        blackFile.getName(), Text.get("signature"), redFile.getName()));
-                if (redFile == null || !redFile.exists())
+                        blackFile.getName(), Text.get("signature"), filenameString));
+                if (redFile == null)
                     BcUtils.log2(String.format("%s: %s", blackFile.getName(), Text.get("no_signed_file")));
                 else
                     verify((PGPSignatureList) x, redFile);
@@ -752,7 +754,7 @@ public class BcUtilsFiles {
     }
 
     private static File mkFile(File base, String ext) {
-        RedFilePanel panel = new RedFilePanel(base, ext);
+        FilePanel panel = new FilePanel(base, ext);
         File file = panel.getOvwFile();
         if (!file.exists())
             return file;
@@ -781,7 +783,19 @@ public class BcUtilsFiles {
         else
             return null;
 
-        return new File(blackFile.getParent(), redFilename);
+        File file = new File(blackFile.getParent(), redFilename);
+        if (!file.exists())
+            return file;
+
+        FilePanel panel = new FilePanel(file);
+        int ret = JOptionPane.showConfirmDialog(null,
+                panel, "",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                Icons.getPgpIcon());
+        if (ret != JOptionPane.OK_OPTION)
+            return null;
+        return panel.getSelectedFile();
     }
 
     public static void pipeAll(InputStream is, OutputStream os)
@@ -825,15 +839,35 @@ public class BcUtilsFiles {
         }
     }
 
-    private static class RedFilePanel
+    private static class FilePanel
             extends JPanel {
-        private final JCheckBox box1;
-        private final JCheckBox box2;
+        private JCheckBox box1;
+        private JCheckBox box2;
         private final File ovwFile;
         private File newFile;
 
-        public RedFilePanel(File base, String ext) {
-            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        public FilePanel(File file) {
+            String base = file.getName();
+            String ext = "out";
+            String fileName = file.getName();
+            int dot = fileName.lastIndexOf('.');
+            if (dot > 0) {
+                base = fileName.substring(0, dot);
+                ext = fileName.substring(dot+1);
+            }
+            ovwFile = file;
+            newFile = ovwFile;
+            int v = 2;
+            while (newFile.exists()) {
+                newFile = new File(
+                        file.getParent(),
+                        String.format("%s_%d%s", base, v++, ext));
+            }
+
+            setup();
+        }
+
+        public FilePanel(File base, String ext) {
             ovwFile = new File(base.getParent(), base.getName() + ext);
             newFile = ovwFile;
             int v = 2;
@@ -843,6 +877,11 @@ public class BcUtilsFiles {
                         String.format("%s_%d%s", base.getName(), v++, ext));
             }
 
+            setup();
+        }
+
+        private void setup() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             ButtonGroup group = new ButtonGroup();
             box1 = new JCheckBox(Text.get("overwrite") + ": " + ovwFile);
             box2 = new JCheckBox(Text.get("new") + ": " + newFile);

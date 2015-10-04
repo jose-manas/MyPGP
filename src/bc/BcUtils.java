@@ -13,7 +13,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProv
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -105,6 +107,8 @@ public class BcUtils {
         ops.update(redBytes);
 
         PGPSignature signature = signatureList.get(0);
+        logSignTime(signature);
+
         if (ops.verify(signature)) {
 //                    Iterator<?> userIds = publicKey.getUserIDs();
 //                    while (userIds.hasNext()) {
@@ -114,6 +118,15 @@ public class BcUtils {
             log2(Text.get("signature_ok"));
         } else {
             log2(Text.get("signature_bad"));
+        }
+    }
+
+    public static void logSignTime(PGPSignature signature) {
+        Date creationTime = signature.getCreationTime();
+        if (creationTime != null) {
+//            SimpleDateFormat sdf = new SimpleDateFormat("H:mm:ss d.M.yyyy");
+            SimpleDateFormat sdf = new SimpleDateFormat("E, d MMM yyyy; H:mm:ss", Text.getLocale());
+            BcUtils.log2(String.format("%s: %s", Text.get("signature"), sdf.format(creationTime)));
         }
     }
 
