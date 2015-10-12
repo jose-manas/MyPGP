@@ -235,11 +235,11 @@ public class Key
         Date creationDate = publicKey.getCreationTime();
         SimpleDateFormat sdf = new SimpleDateFormat("d.M.yyyy");
         kcreation = sdf.format(creationDate);
-        int validityPeriod = publicKey.getValidDays();
-        if (validityPeriod > 0) {
+        long validSeconds = publicKey.getValidSeconds();
+        if (validSeconds > 0) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(creationDate);
-            calendar.add(Calendar.DATE, validityPeriod);
+            calendar.add(Calendar.SECOND, (int) validSeconds);
             kexp = sdf.format(calendar.getTime());
         }
         fingerprint = Hex.toHexString(publicKey.getFingerprint());
@@ -281,7 +281,7 @@ public class Key
     private boolean isValidForEncrypting(PGPPublicKey key) {
         if (!key.isEncryptionKey())
             return false;
-        if (key.isRevoked())
+        if (key.hasRevocation())
             return false;
         if (!hasKeyFlags(key, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE))
             return false;
@@ -373,7 +373,7 @@ public class Key
                 System.out.print(" master");
             if (publicKey.isEncryptionKey())
                 System.out.print(" encryption");
-            if (publicKey.isRevoked())
+            if (publicKey.hasRevocation())
                 System.out.print(" revoked");
         }
         if (secretKey != null) {

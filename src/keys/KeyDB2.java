@@ -46,6 +46,7 @@ public class KeyDB2 {
 //        Set<Key> keySet = new TreeSet<Key>(Key.KEY_COMPARATOR);
         Set<Key> keySet = new TreeSet<Key>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
+
             public int compare(Key key1, Key key2) {
                 return collator.compare(key1.toString(), key2.toString());
             }

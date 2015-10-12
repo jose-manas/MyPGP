@@ -853,7 +853,7 @@ public class BcUtilsFiles {
             int dot = fileName.lastIndexOf('.');
             if (dot > 0) {
                 base = fileName.substring(0, dot);
-                ext = fileName.substring(dot+1);
+                ext = fileName.substring(dot + 1);
             }
             ovwFile = file;
             newFile = ovwFile;

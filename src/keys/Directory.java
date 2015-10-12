@@ -173,6 +173,7 @@ public class Directory {
 //        Collection<Key> sorted = new TreeSet<Key>(Key.KEY_COMPARATOR);
         Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
+
             public int compare(Key key1, Key key2) {
                 return collator.compare(key1.toString(), key2.toString());
             }

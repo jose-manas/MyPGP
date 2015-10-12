@@ -1,6 +1,5 @@
 package exception;
 
-import gui.MyPGP;
 import gui.Version;
 import gui.imgs.Icons;
 

@@ -18,7 +18,7 @@ public class KeyList
 
     private int uid;
     private String name;
-//    private Collection<Key> members = new TreeSet<Key>(Key.KEY_COMPARATOR);
+    //    private Collection<Key> members = new TreeSet<Key>(Key.KEY_COMPARATOR);
     private Collection<Key> members = new HashSet<Key>();
 
     public KeyList(int uid, String name) {
@@ -47,6 +47,7 @@ public class KeyList
 
         Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
+
             public int compare(Key key1, Key key2) {
                 return collator.compare(key1.toString(), key2.toString());
             }
