@@ -21,6 +21,8 @@ public class AlgoPanel2
     public static final String ELGAMAL = "Elgamal";
     public static final String ECDH = "ECDH";
 
+    public static final int CURVE_25519 = -1;
+
     private final JCheckBox sign;
     private final JTextField signAlgo;
     private static String selectedSignAlgo = RSA;
@@ -117,17 +119,37 @@ public class AlgoPanel2
 //          "K-163", "K-233", "K-283", "K-409", "K-571"
 //          "P-192", "P-224", "P-256", "P-384", "P-521"
             add(popupMenu, ECDSA, 192, 224, 256, 384, 521);
+//            add(popupMenu, ECDSA, 192, 224, 256, CURVE_25519, 384, 521);
         }
 
         private void add(JPopupMenu popupMenu, String algo, int... sizes) {
             JMenu menu = new JMenu(algo);
             popupMenu.add(menu);
             for (int size : sizes)
-                menu.add(new SignOption(algo, size));
+                if (size == CURVE_25519)
+                    menu.add(new SignOption_Curve25519());
+                else
+                    menu.add(new SignOption(algo, size));
         }
 
         public void actionPerformed(ActionEvent event) {
             popupMenu.show((JComponent) event.getSource(), 10, 10);
+        }
+    }
+
+    private class SignOption_Curve25519
+            extends JMenuItem {
+        private static final String TITLE = "ECDSA (Curve-25519)";
+
+        public SignOption_Curve25519() {
+            super(TITLE);
+            addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    selectedSignAlgo = ECDSA;
+                    selectedSignSize = -1;
+                    signAlgo.setText(TITLE);
+                }
+            });
         }
     }
 

@@ -3,12 +3,14 @@ package crypto;
 import gui.AlgoPanel2;
 import gui.ThreadUtilities;
 import gui.Version;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.openpgp.*;
@@ -36,6 +38,7 @@ import java.util.Date;
  * org.bouncycastle.jce.provider.JDKKeyPairGenerator
  */
 public class KeyGenerator {
+
 //    private static final BigInteger F4 = BigInteger.valueOf(0x10001);
 
     public static final int S2KCOUNT = 0xc0;
@@ -211,15 +214,18 @@ public class KeyGenerator {
     }
 
     private ECParameterSpec getEcCurve(int size) {
+        if (size == AlgoPanel2.CURVE_25519)
+            // wait for OpenPGP to decide parameters
+            return ECNamedCurveTable.getParameterSpec("Curve-25519");
         if (size <= 192)
             return ECNamedCurveTable.getParameterSpec("P-192");
-        else if (size <= 224)
+        if (size <= 224)
             return ECNamedCurveTable.getParameterSpec("P-224");
-        else if (size <= 256)
+        if (size <= 256)
             return ECNamedCurveTable.getParameterSpec("P-256");     // must
-        else if (size <= 384)
+        if (size <= 384)
             return ECNamedCurveTable.getParameterSpec("P-384");     // may
-        else if (size <= 521)
+        if (size <= 521)
             return ECNamedCurveTable.getParameterSpec("P-521");     // should
         return null;
     }

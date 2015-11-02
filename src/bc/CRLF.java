@@ -9,9 +9,10 @@ import java.io.*;
  * @version 16.5.2011
  */
 public class CRLF {
-    public static final int READ_AHEAD = 200;
-    public static final int CR = 0x0d;
-    public static final int LF = 0x0a;
+    private static final String BEGIN_PGP = "-----BEGIN PGP ";
+    private static final String END_PGP = "-----END PGP ";
+
+    private static final int READ_AHEAD = 200;
 
     public static void main(String[] args)
             throws IOException {
@@ -29,75 +30,87 @@ public class CRLF {
         out.close();
     }
 
+    // email interfaces play with lines in html format and may confuse b64 parser
+    // first, let's decide whether it is binary of asc armored
     public static InputStream sanitize(InputStream in)
             throws IOException {
         BufferedInputStream bif = new BufferedInputStream(in);
         bif.mark(READ_AHEAD);
         byte[] bytes = new byte[READ_AHEAD];
         int n = bif.read(bytes);
-        for (int i = 0; i < n - 2; i++) {
-            byte b = bytes[i];
-            if ((b & 0x80) != 0)
-                break;
-            byte b0 = bytes[i];
-            byte b1 = bytes[i + 1];
-            byte b2 = bytes[i + 2];
-            if (b0 == CR && b1 == CR && b2 == LF) {
-//                System.out.printf("%d: %02x%02x%02x%n", i, b0, b1, b2);
-                bif.reset();
-                return clean(bif);
-            }
+        String ascii7 = new String(bytes, 0, n);
+        if (ascii7.contains(BEGIN_PGP)) {
+            // ASC
+            bif.reset();
+            return clean(bif);
+        } else {
+            // binary
+            bif.reset();
+            return bif;
         }
-//        System.out.println("binary");
-        bif.reset();
-        return bif;
     }
 
+    // asc armor; let's simplify ends of line
+    // respect one empty line between armor headers and body
     private static InputStream clean(InputStream in)
             throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(baos);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+
+        // 0 - waiting for header
+        // 1 - reading headers
+        // 2 - reading body
         int state = 0;
         for (; ; ) {
-            int ch = in.read();
-            if (ch < 0)
+            String line = br.readLine();
+            if (line == null)
                 break;
+            line = line.trim();
             switch (state) {
                 case 0:
-                    if (ch == CR)
+                    if (line.startsWith(BEGIN_PGP)) {
+                        out.println(line);
                         state = 1;
-                    else
-                        baos.write(ch);
-                    break;
+                    }
+                    continue;
                 case 1:
-                    if (ch == CR) {
+                    if (line.length() == 0)
+                        continue;
+                    if (!line.contains(": ")) {
+                        out.println();
                         state = 2;
-                    } else {
-                        baos.write(CR);
-                        baos.write(ch);
-                        state = 0;
                     }
-                    break;
+                    out.println(line);
+                    continue;
                 case 2:
-                    if (ch == LF) {
-                        baos.write(CR);
-                        baos.write(LF);
+                    if (line.length() == 0)
+                        continue;
+                    if (line.startsWith(END_PGP)) {
+                        out.println(line);
+                        state = 0;
                     } else {
-                        baos.write(CR);
-                        baos.write(CR);
-                        baos.write(ch);
+                        out.println(line);
                     }
-                    state = 0;
             }
         }
         in.close();
+        out.close();
 
-        if (state == 1) {
-            baos.write(CR);
-        } else if (state == 2) {
-            baos.write(CR);
-            baos.write(CR);
+/*
+        BufferedReader check =
+                new BufferedReader(
+                        new InputStreamReader(
+                                new ByteArrayInputStream(baos.toByteArray())));
+        for (; ; ) {
+            String line = check.readLine();
+            if (line == null)
+                break;
+            System.out.println(line);
         }
-        baos.close();
+        check.close();
+*/
+
         return new ByteArrayInputStream(baos.toByteArray());
     }
 }
