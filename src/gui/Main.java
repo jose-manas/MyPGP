@@ -1,13 +1,11 @@
 package gui;
 
-import bc.ClasspathHacker;
 import exception.MyLogger;
 import gui.imgs.Icons;
 import keys.Info;
 
 import javax.swing.*;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.prefs.Preferences;
 
 /**
@@ -20,8 +18,6 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-
             Preferences preferences = Preferences.userRoot().node("mypgp");
 
             String langPreference = preferences.get("language", "en");
@@ -48,15 +44,6 @@ public class Main {
                 throw new NoHomeException();
             preferences.put("root", home.getCanonicalPath());
             Info.setHome(home);
-
-            File[] jars = home.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".jar");
-                }
-            });
-
-            for (File file : jars)
-                ClasspathHacker.addFile(file);
 
             MyPGP.start();
         } catch (NoHomeException nhe) {
