@@ -130,6 +130,8 @@ public class Directory {
 
     private static boolean skip(File child) {
         String childname = child.getName().toLowerCase();
+        if (childname.startsWith("_"))
+            return true;
         if (childname.endsWith(".skip"))
             return true;
         if (childname.endsWith(".mypgp"))

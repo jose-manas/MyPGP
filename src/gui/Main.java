@@ -49,7 +49,9 @@ public class Main {
             preferences.put("root", home.getCanonicalPath());
             Info.setHome(home);
 
-            File jarlib = new File(home, "lib.skip");
+            File jarlib = new File(home, "_lib");
+            if (!(jarlib.exists() && jarlib.isDirectory()))
+                jarlib = new File(home, "lib.skip");
             if (!(jarlib.exists() && jarlib.isDirectory()))
                 jarlib = home;
 

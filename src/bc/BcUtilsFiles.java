@@ -816,6 +816,8 @@ public class BcUtilsFiles {
             is.close();
         } catch (Exception ignored) {
         }
+        is = null;
+        System.gc();
     }
 
     private static void close(OutputStream os) {
@@ -825,6 +827,8 @@ public class BcUtilsFiles {
             os.close();
         } catch (Exception ignored) {
         }
+        os = null;
+        System.gc();
     }
 
     private static void forget(File file, OutputStream os) {
@@ -837,6 +841,8 @@ public class BcUtilsFiles {
             file.delete();
         } catch (Exception ignored) {
         }
+        os = null;
+        System.gc();
     }
 
     private static class FilePanel
