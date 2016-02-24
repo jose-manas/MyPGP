@@ -42,12 +42,9 @@ public class BcUtilsFiles {
         boolean armor = true;
         boolean withIntegrityCheck = true;
 
-        File blackFile = null;
+        File blackFile = mkFile(redFile, ".asc");
         OutputStream out = null;
         try {
-            blackFile = mkFile(redFile, ".asc");
-            if (blackFile == null)
-                return;
             OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
             out = os;
             if (armor) {
@@ -95,21 +92,15 @@ public class BcUtilsFiles {
                 }
                 redIs.close();
             }
-            literalOut.close();
 
-            compressedOut.close();
+            close(literalOut);
+            close(compressedOut);
             compressedDataGenerator.close();
-            encryptedData.close();
+            close(encryptedData);
             encryptedDataGenerator.close();
-
+            close(os);
+        } finally {
             close(out);
-        } catch (Exception e) {
-            forget(blackFile, out);
-            throw e;
-
-//        } finally {
-//            close(out);
-//            close(os);
         }
     }
 
@@ -117,7 +108,7 @@ public class BcUtilsFiles {
             throws Exception {
         boolean armor = false;
 
-        File outFile = null;
+        File outFile;
         OutputStream out = null;
         try {
             PGPSecretKey secretKey = signerKey.getSigningKey();
@@ -161,16 +152,11 @@ public class BcUtilsFiles {
 
             BCPGOutputStream bOut = new BCPGOutputStream(out);
             signatureGenerator.generate().encode(bOut);
-            bOut.close();
 
+            close(bOut);
+            close(os);
+        } finally {
             close(out);
-        } catch (Exception e) {
-            forget(outFile, out);
-            throw e;
-
-//        } finally {
-//            close(out);
-//            close(os);
         }
     }
 
@@ -180,7 +166,7 @@ public class BcUtilsFiles {
             throws Exception {
         boolean armor = false;
 
-        File outFile = null;
+        File outFile;
         OutputStream out = null;
         try {
             PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
@@ -238,126 +224,13 @@ public class BcUtilsFiles {
 
                 signatureGenerator.generate().encode(bOut);
             }
-            bOut.close();
 
+            close(bOut);
+            close(os);
+        } finally {
             close(out);
-        } catch (Exception e) {
-            forget(outFile, out);
-            throw e;
-
-//        } finally {
-//            close(out);
-//            close(os);
         }
     }
-
-//    public static void encrypt_sign(File redFile, Key signerKey, List<Key> publicKeys, char[] password)
-//            throws IOException, PGPException {
-//        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-//        MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
-//        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
-//
-//        boolean armor = true;
-//        boolean withIntegrityCheck = true;
-//
-//        OutputStream os = null;
-//        OutputStream out = null;
-//        try {
-//            PGPSecretKey secretKey = signerKey.getSigningKey();
-//            PGPPublicKey publicKey = secretKey.getPublicKey();
-//            PGPPrivateKey privateKey = BcUtils.getPrivateKey(secretKey, password);
-//            if (privateKey == null)
-//                return;
-//
-//            File blackFile = mkFile(redFile, ".asc");
-//            if (blackFile == null)
-//                return;
-//            os = new BufferedOutputStream(new FileOutputStream(blackFile));
-//            out = os;
-//            if (armor) {
-//                ArmoredOutputStream aos = new ArmoredOutputStream(os);
-//                aos.setHeader("Comment", Version.VERSION);
-//                out = aos;
-//            }
-//
-//            JcePGPDataEncryptorBuilder encryptorBuilder =
-//                    new JcePGPDataEncryptorBuilder(encryptAlgo)
-//                            .setWithIntegrityPacket(withIntegrityCheck)
-//                            .setSecureRandom(new SecureRandom())
-//                            .setProvider("BC");
-//            PGPEncryptedDataGenerator encryptedDataGenerator =
-//                    new PGPEncryptedDataGenerator(encryptorBuilder);
-//
-//            for (Key key : publicKeys) {
-//                PGPPublicKey encryptingKey = key.getEncryptingKey();
-//                JcePublicKeyKeyEncryptionMethodGenerator keyEncryptionMethodGenerator =
-//                        new JcePublicKeyKeyEncryptionMethodGenerator(encryptingKey)
-//                                .setProvider("BC");
-//                encryptedDataGenerator.addMethod(keyEncryptionMethodGenerator);
-//            }
-//
-//            OutputStream encryptedData = encryptedDataGenerator.open(out, new byte[BUFFER_SIZE]);
-//            PGPCompressedDataGenerator compressedDataGenerator =
-//                    new PGPCompressedDataGenerator(compressionAlgo);
-//            OutputStream compressedOut = compressedDataGenerator.open(encryptedData);
-//
-//            int signAlgo = publicKey.getAlgorithm();
-//            int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-//            MyPGP.getInstance().log2(String.format("%s: %s(%s)",
-//                    signerKey,
-//                    ToString.publicKey(signAlgo),
-//                    ToString.hash(hashAlgo)));
-//
-//            JcaPGPContentSignerBuilder contentSignerBuilder =
-//                    new JcaPGPContentSignerBuilder(signAlgo, hashAlgo)
-//                            .setProvider("BC");
-//            PGPSignatureGenerator signatureGenerator =
-//                    new PGPSignatureGenerator(contentSignerBuilder);
-//            signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-//
-//            Iterator it = publicKey.getUserIDs();
-//            if (it.hasNext()) {
-//                String userId = (String) it.next();
-//                PGPSignatureSubpacketGenerator signatureSubpacketGenerator =
-//                        new PGPSignatureSubpacketGenerator();
-//                signatureSubpacketGenerator.setSignerUserID(false, userId);
-//                signatureGenerator.setHashedSubpackets(signatureSubpacketGenerator.generate());
-//            }
-//            signatureGenerator.generateOnePassVersion(false).encode(compressedOut);
-//
-//            PGPLiteralDataGenerator literalDataGenerator =
-//                    new PGPLiteralDataGenerator();
-//            OutputStream literalOut = literalDataGenerator.open(compressedOut,
-//                    PGPLiteralData.BINARY,
-//                    redFile.getName(),
-//                    new Date(blackFile.lastModified()),
-//                    new byte[BUFFER_SIZE]);
-//
-//            {
-//                byte[] buffer = new byte[BUFFER_SIZE];
-//                InputStream redIs = new BufferedInputStream(new FileInputStream(redFile));
-//                for (; ; ) {
-//                    int n = redIs.read(buffer);
-//                    if (n < 0)
-//                        break;
-//                    literalOut.write(buffer, 0, n);
-//                    signatureGenerator.update(buffer, 0, n);
-//                }
-//                redIs.close();
-//            }
-//            literalOut.close();
-//            literalDataGenerator.close();
-//            signatureGenerator.generate().encode(compressedOut);
-//
-//            compressedOut.close();
-//            compressedDataGenerator.close();
-//            encryptedData.close();
-//            encryptedDataGenerator.close();
-//        } finally {
-//            close(out);
-//            close(os);
-//        }
-//    }
 
     public static void encrypt_sign(File redFile,
                                     List<Key> signerKeyList,
@@ -469,24 +342,18 @@ public class BcUtilsFiles {
                     }
                     redIs.close();
                 }
-                literalOut.close();
+                close(literalOut);
                 literalDataGenerator.close();
                 signatureGenerator.generate().encode(compressedOut);
             }
 
-            compressedOut.close();
+            close(compressedOut);
             compressedDataGenerator.close();
-            encryptedData.close();
+            close(encryptedData);
             encryptedDataGenerator.close();
-
-            close(out);
-        } catch (Exception e) {
-            forget(blackFile, out);
-            throw e;
-
+            close(os);
         } finally {
-//            close(out);
-//            close(os);
+            close(out);
         }
     }
 
@@ -578,6 +445,8 @@ public class BcUtilsFiles {
             }
 
             BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
+
+            close(clear);
         } finally {
             close(is);
         }
@@ -605,6 +474,8 @@ public class BcUtilsFiles {
                 PGPSignature signature = signatureList.get(i);
                 verify(redFile, signature);
             }
+
+            close(decoderStream);
         } finally {
             close(sigIs);
         }
@@ -816,8 +687,7 @@ public class BcUtilsFiles {
             is.close();
         } catch (Exception ignored) {
         }
-        is = null;
-        System.gc();
+//        System.gc();
     }
 
     private static void close(OutputStream os) {
@@ -827,22 +697,7 @@ public class BcUtilsFiles {
             os.close();
         } catch (Exception ignored) {
         }
-        os = null;
-        System.gc();
-    }
-
-    private static void forget(File file, OutputStream os) {
-        try {
-            os.close();
-        } catch (Exception ignored) {
-        }
-        try {
-            //noinspection ResultOfMethodCallIgnored
-            file.delete();
-        } catch (Exception ignored) {
-        }
-        os = null;
-        System.gc();
+//        System.gc();
     }
 
     private static class FilePanel
