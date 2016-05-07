@@ -595,6 +595,12 @@ public class BcUtilsFiles {
         close(is);
     }
 
+    /**
+     * Prepares a new file with a given extension.
+     * @param base base name.
+     * @param ext extension (with starting dot).
+     * @return file with cooked name.
+     */
     private static File mkFile(File base, String ext) {
         FilePanel panel = new FilePanel(base, ext);
         File file = panel.getOvwFile();
@@ -681,12 +687,12 @@ public class BcUtilsFiles {
 
         FilePanel(File file) {
             String base = file.getName();
-            String ext = "out";
+            String ext = ".out";
             String fileName = file.getName();
             int dot = fileName.lastIndexOf('.');
             if (dot > 0) {
                 base = fileName.substring(0, dot);
-                ext = fileName.substring(dot + 1);
+                ext = fileName.substring(dot);      // starting dot
             }
             ovwFile = file;
             newFile = ovwFile;
