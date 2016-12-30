@@ -32,7 +32,7 @@ public class CRLF {
 
     // email interfaces play with lines in html format and may confuse b64 parser
     // first, let's decide whether it is binary of asc armored
-    public static InputStream sanitize(InputStream in)
+    static InputStream sanitize(InputStream in)
             throws IOException {
         BufferedInputStream bif = new BufferedInputStream(in);
         bif.mark(READ_AHEAD);

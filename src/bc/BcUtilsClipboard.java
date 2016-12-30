@@ -11,7 +11,6 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
@@ -145,7 +144,7 @@ public class BcUtilsClipboard {
             return redText;
 
         BufferedReader reader = new BufferedReader(new StringReader(redText));
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
         for (; ; ) {
             String line = reader.readLine();
             if (line == null)
@@ -416,7 +415,7 @@ public class BcUtilsClipboard {
 
     private static List<byte[]> readLines(ArmoredInputStream in)
             throws IOException {
-        List<byte[]> lines = new ArrayList<byte[]>();
+        List<byte[]> lines = new ArrayList<>();
         int state = 0;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (; ; ) {
@@ -526,7 +525,7 @@ public class BcUtilsClipboard {
         return "";
     }
 
-    public static void pipeAll(InputStream is, OutputStream os)
+    private static void pipeAll(InputStream is, OutputStream os)
             throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
         for (; ; ) {

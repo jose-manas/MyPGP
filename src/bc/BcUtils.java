@@ -23,8 +23,8 @@ import java.util.List;
  * @author Jose A. Manas
  * @version 14.9.2014
  */
-public class BcUtils {
-    public static PGPPrivateKey getPrivateKey(PGPSecretKey pgpSecretKey, char[] password) {
+class BcUtils {
+    static PGPPrivateKey getPrivateKey(PGPSecretKey pgpSecretKey, char[] password) {
         try {
             PBESecretKeyDecryptor decryptor =
                     new BcPBESecretKeyDecryptorBuilder(
@@ -37,7 +37,7 @@ public class BcUtils {
         }
     }
 
-    public static PGPEncryptedDataList getEncryptedDataList(InputStream is, String name)
+    static PGPEncryptedDataList getEncryptedDataList(InputStream is, String name)
             throws IOException {
         InputStream in = PGPUtil.getDecoderStream(is);
         PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(in);
@@ -53,8 +53,8 @@ public class BcUtils {
         }
     }
 
-    public static List<PGPPublicKeyEncryptedData> getKnownKeyEncryptedData(PGPEncryptedDataList encryptedDataList) {
-        List<PGPPublicKeyEncryptedData> list = new ArrayList<PGPPublicKeyEncryptedData>();
+    static List<PGPPublicKeyEncryptedData> getKnownKeyEncryptedData(PGPEncryptedDataList encryptedDataList) {
+        List<PGPPublicKeyEncryptedData> list = new ArrayList<>();
         Iterator it = encryptedDataList.getEncryptedDataObjects();
         while (it.hasNext()) {
             Object next = it.next();
@@ -77,8 +77,8 @@ public class BcUtils {
         return list;
     }
 
-    public static void verifySignature(PGPOnePassSignatureList onePassSignatureList, PGPSignatureList signatureList,
-                                       byte[] redBytes)
+    static void verifySignature(PGPOnePassSignatureList onePassSignatureList, PGPSignatureList signatureList,
+                                byte[] redBytes)
             throws PGPException {
         if (onePassSignatureList == null || signatureList == null) {
             log2(Text.get("signers_none"));
@@ -121,7 +121,7 @@ public class BcUtils {
         }
     }
 
-    public static void logSignTime(PGPSignature signature) {
+    static void logSignTime(PGPSignature signature) {
         Date creationTime = signature.getCreationTime();
         if (creationTime != null) {
 //            SimpleDateFormat sdf = new SimpleDateFormat("H:mm:ss d.M.yyyy");
@@ -130,11 +130,11 @@ public class BcUtils {
         }
     }
 
-    public static void log1(String msg) {
+    static void log1(String msg) {
         MyPGP.getInstance().log1(msg);
     }
 
-    public static void log2(String msg) {
+    static void log2(String msg) {
         MyPGP.getInstance().log2(msg);
     }
 }

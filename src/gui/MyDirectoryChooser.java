@@ -14,15 +14,15 @@ import java.util.ArrayList;
 /**
  * Created by jam on 06/03/2015.
  */
-public class MyDirectoryChooser
+class MyDirectoryChooser
         extends JPanel {
-    public static final int MDC_WIDTH = 400;
-    public static final int MDC_HEIGHT = (int) (MDC_WIDTH / 1.6);
+    private static final int MDC_WIDTH = 400;
+    private static final int MDC_HEIGHT = (int) (MDC_WIDTH / 1.6);
 
     private final DefaultTreeModel filesystemModel;
     private final JTree filesystemTree;
 
-    public MyDirectoryChooser() {
+    MyDirectoryChooser() {
         super(new BorderLayout());
         DefaultMutableTreeNode top =
                 new DefaultMutableTreeNode(
@@ -54,7 +54,7 @@ public class MyDirectoryChooser
 
     public void setDirectory(File directory) {
         try {
-            ArrayList<File> filePath = new ArrayList<File>();
+            ArrayList<File> filePath = new ArrayList<>();
             for (File f = directory; f != null; f = f.getParentFile())
                 filePath.add(0, f);
             DefaultMutableTreeNode found = find((DefaultMutableTreeNode) filesystemModel.getRoot(), filePath);
@@ -88,8 +88,7 @@ public class MyDirectoryChooser
         return null;
     }
 
-
-    public File getSelectedDirectory() {
+    File getSelectedDirectory() {
         try {
             TreePath path = filesystemTree.getSelectionPath();
             DefaultMutableTreeNode node = getTreeNode(path);
@@ -118,18 +117,18 @@ public class MyDirectoryChooser
         }
     }
 
-    private class IconData {
+    private static class IconData {
         private final Icon icon;
         private final Icon expandedIcon;
         private final Object object;
 
-        public IconData(Icon icon, Object object) {
+        IconData(Icon icon, Object object) {
             this.icon = icon;
             expandedIcon = null;
             this.object = object;
         }
 
-        public IconData(Icon icon, Icon expandedIcon, Object data) {
+        IconData(Icon icon, Icon expandedIcon, Object data) {
             this.icon = icon;
             this.expandedIcon = expandedIcon;
             object = data;
@@ -139,7 +138,7 @@ public class MyDirectoryChooser
             return icon;
         }
 
-        public Icon getExpandedIcon() {
+        Icon getExpandedIcon() {
             return expandedIcon != null ? expandedIcon : icon;
         }
 
@@ -155,7 +154,7 @@ public class MyDirectoryChooser
     private class FileNode {
         private final File file;
 
-        public FileNode(File file) {
+        FileNode(File file) {
             this.file = file;
         }
 
@@ -168,7 +167,7 @@ public class MyDirectoryChooser
             return name.length() > 0 ? name : file.getPath();
         }
 
-        public boolean expand(DefaultMutableTreeNode parent) {
+        boolean expand(DefaultMutableTreeNode parent) {
             DefaultMutableTreeNode flag = (DefaultMutableTreeNode) parent.getFirstChild();
             if (flag == null)
                 return false;
@@ -182,7 +181,7 @@ public class MyDirectoryChooser
             if (files == null)
                 return true;
 
-            ArrayList<FileNode> childList = new ArrayList<FileNode>();
+            ArrayList<FileNode> childList = new ArrayList<>();
 
             for (File child : files) {
                 if (child.isDirectory())
@@ -212,7 +211,7 @@ public class MyDirectoryChooser
             childList.add(newNode);
         }
 
-        public boolean hasSubDirs() {
+        boolean hasSubDirs() {
             File[] files = listFiles();
             if (files == null)
                 return false;
@@ -223,7 +222,7 @@ public class MyDirectoryChooser
             return false;
         }
 
-        public int compareTo(FileNode toCompare) {
+        int compareTo(FileNode toCompare) {
             return file.getName().compareToIgnoreCase(toCompare.file.getName());
         }
 
@@ -242,7 +241,7 @@ public class MyDirectoryChooser
         }
     }
 
-    private class IconCellRenderer
+    private static class IconCellRenderer
             extends JLabel
             implements TreeCellRenderer {
         private final Color textSelectionColor;
@@ -253,7 +252,7 @@ public class MyDirectoryChooser
 
         private boolean selected;
 
-        public IconCellRenderer() {
+        IconCellRenderer() {
             textSelectionColor = UIManager.getColor("Tree.selectionForeground");
             textNonSelectionColor = UIManager.getColor("Tree.textForeground");
             bgSelectionColor = UIManager.getColor("Tree.selectionBackground");

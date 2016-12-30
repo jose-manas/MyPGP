@@ -9,7 +9,7 @@ import java.util.Properties;
  * Language dependant texts without external dictionary.
  *
  * @author Jose A. Manas
- * @version 31.5.2007
+ * @version 30.12.2016
  */
 public class Text {
     private static Locale locale;
@@ -20,7 +20,7 @@ public class Text {
             {"es", "Espa\u00F1ol"},
     };
 
-    public static String[][] getLanguages() {
+    static String[][] getLanguages() {
         return languages;
     }
 
@@ -31,7 +31,7 @@ public class Text {
         return text;
     }
 
-    public static void setLocale(String lang) {
+    static void setLocale(String lang) {
         try {
             Text.locale = new Locale(lang);
             setDefaults();
@@ -58,6 +58,7 @@ public class Text {
         dictionary.put("add_key_sig", "sign key");
         dictionary.put("algorithms", "algorithms");
         dictionary.put("alias", "alias");
+        dictionary.put("binary", "binary");
         dictionary.put("cancel", "cancel");
         dictionary.put("clipboard", "clipboard");
         dictionary.put("comment", "comment");
@@ -115,6 +116,7 @@ public class Text {
         dictionary.put("signers_none", "no signers");
         dictionary.put("size", "size");
         dictionary.put("skip", "skip");
+        dictionary.put("text", "text");
         dictionary.put("unknown", "unknown");
         dictionary.put("verify", "verify");
         dictionary.put("wait", "wait ...");
@@ -127,6 +129,7 @@ public class Text {
         dictionary.put("add_key_sig", "firmar clave");
         dictionary.put("algorithms", "algoritmos");
         dictionary.put("alias", "alias");
+        dictionary.put("binary", "binario");
         dictionary.put("cancel", "cancelar");
         dictionary.put("clipboard", "portapapeles");
         dictionary.put("comment", "comentario");
@@ -184,6 +187,7 @@ public class Text {
         dictionary.put("signers_none", "no hay firmas");
         dictionary.put("size", "tama\u00F1o");
         dictionary.put("skip", "ignorar");
+        dictionary.put("text", "texto");
         dictionary.put("unknown", "desconocida");
         dictionary.put("verify", "verificar");
         dictionary.put("wait", "espere ...");

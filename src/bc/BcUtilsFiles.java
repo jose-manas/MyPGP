@@ -2,6 +2,7 @@ package bc;
 
 import crypto.GetPassword;
 import exception.PasswordCancelled;
+import gui.FilePanel;
 import gui.MyPGP;
 import gui.Text;
 import gui.Version;
@@ -11,13 +12,11 @@ import keys.KeyDB2;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.*;
-import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.*;
 import java.security.SecureRandom;
 import java.security.SignatureException;
@@ -28,21 +27,29 @@ import java.util.Map;
 
 /**
  * @author Jose A. Manas
- * @version 17.8.2014
+ * @version 30.12.2016
  */
 public class BcUtilsFiles {
     private static final int BUFFER_SIZE = 1 << 16;
 
-    public static void encrypt(File redFile, List<Key> publicKeys)
+    /**
+     * Encrypt one file.
+     *
+     * @param redFile    file to encrypt.
+     * @param publicKeys destinations.
+     * @param armor      true means asc file (text).
+     * @throws Exception if anything goes wrong.
+     */
+    public static void encrypt(File redFile, List<Key> publicKeys, boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
         MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
-        boolean armor = true;
+//        boolean armor = true;
         boolean withIntegrityCheck = true;
 
-        File blackFile = mkFile(redFile, ".asc");
+        File blackFile = mkFile(redFile, armor ? ".asc" : ".pgp");
         if (blackFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
@@ -102,9 +109,18 @@ public class BcUtilsFiles {
         close(os);
     }
 
-    public static void sign(File inFile, Key signerKey, char[] password)
+    /**
+     * Sign one file.
+     *
+     * @param inFile    file to sign.
+     * @param signerKey signer.
+     * @param password  password for private key.
+     * @param armor     true means asc file (text).
+     * @throws Exception if anything goes wrong.
+     */
+    public static void sign(File inFile, Key signerKey, char[] password, boolean armor)
             throws Exception {
-        boolean armor = false;
+//        boolean armor = false;
 
         PGPSecretKey secretKey = signerKey.getSigningKey();
         PGPPublicKey publicKey = secretKey.getPublicKey();
@@ -112,7 +128,7 @@ public class BcUtilsFiles {
         if (privateKey == null)
             return;
 
-        File outFile = mkFile(inFile, ".sig");
+        File outFile = mkFile(inFile, armor ? ".asc" : ".sig");
         if (outFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
@@ -155,11 +171,21 @@ public class BcUtilsFiles {
         close(os);
     }
 
+    /**
+     * Sign one file.
+     *
+     * @param inFile        file to sign.
+     * @param signerKeyList signers.
+     * @param passwords     signers' passwords.
+     * @param armor         true means asc file (text).
+     * @throws Exception if anything goes wrong.
+     */
     public static void sign(File inFile,
                             List<Key> signerKeyList,
-                            Map<Key, char[]> passwords)
+                            Map<Key, char[]> passwords,
+                            boolean armor)
             throws Exception {
-        boolean armor = false;
+//        boolean armor = false;
 
         PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
         PGPPrivateKey[] privateKeys = new PGPPrivateKey[signerKeyList.size()];
@@ -175,7 +201,7 @@ public class BcUtilsFiles {
             privateKeys[i] = privateKey;
         }
 
-        File outFile = mkFile(inFile, ".sig");
+        File outFile = mkFile(inFile, armor ? ".asc" : ".sig");
         if (outFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
@@ -224,16 +250,27 @@ public class BcUtilsFiles {
         close(os);
     }
 
+    /**
+     * Sign encrypt one file.
+     *
+     * @param redFile        file to sign & encrypt.
+     * @param signerKeyList  signers.
+     * @param encryptingKeys destinations.
+     * @param passwords      signers' passwords.
+     * @param armor          true means asc file (text).
+     * @throws Exception if anything goes wrong.
+     */
     public static void encrypt_sign(File redFile,
                                     List<Key> signerKeyList,
                                     List<Key> encryptingKeys,
-                                    Map<Key, char[]> passwords)
+                                    Map<Key, char[]> passwords,
+                                    boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
         MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
 
-        boolean armor = true;
+//        boolean armor = true;
         boolean withIntegrityCheck = true;
 
         PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
@@ -250,7 +287,7 @@ public class BcUtilsFiles {
             privateKeys[i] = privateKey;
         }
 
-        File blackFile = mkFile(redFile, ".asc");
+        File blackFile = mkFile(redFile, armor ? ".asc" : ".pgp");
         if (blackFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
@@ -431,6 +468,14 @@ public class BcUtilsFiles {
         close(is);
     }
 
+    /**
+     * Verify file signature.
+     *
+     * @param signatureFile detached signature.
+     * @param redFile       signed file.
+     * @throws IOException  errors.
+     * @throws PGPException errors.
+     */
     public static void verify(File signatureFile, File redFile)
             throws IOException, PGPException {
         InputStream sigIs = new FileInputStream(signatureFile);
@@ -500,6 +545,16 @@ public class BcUtilsFiles {
             BcUtils.log2(Text.get("signature_bad"));
     }
 
+    /**
+     * Discover crypto operations to perform.
+     *
+     * @param blackFile entry file.
+     * @param passwords known destinations' passwords.
+     * @throws IOException        errors.
+     * @throws PasswordCancelled  user cancels.
+     * @throws PGPException       errors.
+     * @throws SignatureException fail.
+     */
     public static void process(File blackFile, Map<Long, char[]> passwords)
             throws IOException, PasswordCancelled, PGPException, SignatureException {
         InputStream is = CRLF.sanitize(new FileInputStream(blackFile));
@@ -597,8 +652,9 @@ public class BcUtilsFiles {
 
     /**
      * Prepares a new file with a given extension.
+     *
      * @param base base name.
-     * @param ext extension (with starting dot).
+     * @param ext  extension (with starting dot).
      * @return file with cooked name.
      */
     private static File mkFile(File base, String ext) {
@@ -678,71 +734,4 @@ public class BcUtilsFiles {
 //        System.gc();
     }
 
-    private static class FilePanel
-            extends JPanel {
-        private JCheckBox box1;
-        private JCheckBox box2;
-        private final File ovwFile;
-        private File newFile;
-
-        FilePanel(File file) {
-            String base = file.getName();
-            String ext = ".out";
-            String fileName = file.getName();
-            int dot = fileName.lastIndexOf('.');
-            if (dot > 0) {
-                base = fileName.substring(0, dot);
-                ext = fileName.substring(dot);      // starting dot
-            }
-            ovwFile = file;
-            newFile = ovwFile;
-            int v = 2;
-            while (newFile.exists()) {
-                newFile = new File(
-                        file.getParent(),
-                        String.format("%s_%d%s", base, v++, ext));
-            }
-
-            setup();
-        }
-
-        FilePanel(File base, String ext) {
-            ovwFile = new File(base.getParent(), base.getName() + ext);
-            newFile = ovwFile;
-            int v = 2;
-            while (newFile.exists()) {
-                newFile = new File(
-                        base.getParent(),
-                        String.format("%s_%d%s", base.getName(), v++, ext));
-            }
-
-            setup();
-        }
-
-        private void setup() {
-            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            ButtonGroup group = new ButtonGroup();
-            box1 = new JCheckBox(Text.get("overwrite") + ": " + ovwFile);
-            box2 = new JCheckBox(Text.get("new") + ": " + newFile);
-            group.add(box1);
-            group.add(box2);
-            box1.setSelected(true);
-
-            box1.setAlignmentX(Component.LEFT_ALIGNMENT);
-            box2.setAlignmentX(Component.LEFT_ALIGNMENT);
-            add(box1);
-            add(box2);
-        }
-
-        public File getOvwFile() {
-            return ovwFile;
-        }
-
-        public File getSelectedFile() {
-            if (box1.isSelected())
-                return ovwFile;
-            else
-                return newFile;
-        }
-    }
 }

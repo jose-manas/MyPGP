@@ -14,8 +14,11 @@ public class SecureDeleter {
         if (!file.exists())
             return;
         if (file.isDirectory()) {
-            for (File f : file.listFiles())
-                delete(myPGP, f);
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File f : files)
+                    delete(myPGP, f);
+            }
             file.delete();
         } else {
             SecureDeleteWorker worker = new SecureDeleteWorker(myPGP, file);

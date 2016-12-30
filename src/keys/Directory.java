@@ -194,10 +194,10 @@ public class Directory {
         for (Map.Entry<File, Collection<Key>> es : keyloadlog.entrySet()) {
             try {
                 File file = es.getKey();
-                builder.append(String.format("%s\n", file.getCanonicalPath()));
+                builder.append(String.format("%s%n", file.getCanonicalPath()));
                 Collection<Key> list = es.getValue();
                 for (Key key : list)
-                    builder.append(String.format("        [%s] %s\n", key.getKid8(), key));
+                    builder.append(String.format("        [%s] %s%n", key.getKid8(), key));
                 builder.append('\n');
             } catch (IOException ignored) {
             }

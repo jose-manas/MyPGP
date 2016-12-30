@@ -23,23 +23,23 @@ import java.util.regex.Pattern;
  * @author jam
  * @version 6.3.2015
  */
-public class MyFileChooser
+class MyFileChooser
         extends JPanel {
-    public static final int COL_ICON = 0;
-    public static final int COL_NAME = 1;
-    public static final int COL_SIZE = 2;
-    public static final int COL_DATE = 3;
+    private static final int COL_ICON = 0;
+    private static final int COL_NAME = 1;
+    private static final int COL_SIZE = 2;
+    private static final int COL_DATE = 3;
 
     private final JTable table;
     private final FileTableModel tableModel;
     private BreadCrumb breadCrumb;
     private Preferences preferences;
 
-    public MyFileChooser() {
+    MyFileChooser() {
         this(System.getProperty("user.home"));
     }
 
-    public MyFileChooser(String dirname) {
+    private MyFileChooser(String dirname) {
         super(new BorderLayout());
         File directory = new File(dirname);
 
@@ -106,11 +106,11 @@ public class MyFileChooser
         revalidate();
     }
 
-    public void rescanCurrentDirectory() {
+    void rescanCurrentDirectory() {
         setDirectory(tableModel.getDirectory());
     }
 
-    public File[] getSelectedFiles() {
+    File[] getSelectedFiles() {
         int[] rows = table.getSelectedRows();
         File[] files = new File[rows.length];
         for (int i = 0; i < rows.length; i++)
@@ -118,7 +118,7 @@ public class MyFileChooser
         return files;
     }
 
-    public File getSelectedFile() {
+    File getSelectedFile() {
         try {
             return getSelectedFiles()[0];
         } catch (Exception e) {
@@ -126,11 +126,11 @@ public class MyFileChooser
         }
     }
 
-    public File getCurrentDirectory() {
+    File getCurrentDirectory() {
         return tableModel.getDirectory();
     }
 
-    public void setSelectedFiles(File[] files) {
+    void setSelectedFiles(File[] files) {
         table.clearSelection();
         if (tableModel.children == null)
             return;
@@ -145,7 +145,7 @@ public class MyFileChooser
         }
     }
 
-    private class FileTableModel
+    private static class FileTableModel
             extends AbstractTableModel {
         private File[] children;
 
@@ -153,12 +153,12 @@ public class MyFileChooser
                 "", Text.get("name"), Text.get("size"), Text.get("date")
         };
 
-        protected Class[] columnClasses = new Class[]{
+        Class[] columnClasses = new Class[]{
                 Icon.class, String.class, Long.class, Date.class
         };
         private File directory;
 
-        public FileTableModel(File directory) {
+        FileTableModel(File directory) {
             setDirectory(directory);
         }
 
@@ -226,7 +226,7 @@ public class MyFileChooser
             }
         }
 
-        public Object getDefaultValueAt(int col) {
+        Object getDefaultValueAt(int col) {
             switch (col) {
                 case COL_ICON:
                     return null;
@@ -241,7 +241,7 @@ public class MyFileChooser
             }
         }
 
-        public File getFile(int row) {
+        File getFile(int row) {
             if (children == null)
                 return null;
             return children[row];
@@ -257,7 +257,7 @@ public class MyFileChooser
             extends JPanel {
         private final String fs = System.getProperty("file.separator");
 
-        public BreadCrumb(File directory) {
+        BreadCrumb(File directory) {
             super(new FlowLayout(FlowLayout.LEFT));
             add(mkButton(new JButton(Icons.getComputerIcon()), new JumpRoots()));
             if (directory == null)
@@ -309,7 +309,7 @@ public class MyFileChooser
                 extends AbstractAction {
             private final File path;
 
-            public Jumper(File path) {
+            Jumper(File path) {
                 this.path = path;
             }
 
@@ -319,11 +319,11 @@ public class MyFileChooser
         }
     }
 
-    private class MySizeRenderer
+    private static class MySizeRenderer
             extends DefaultTableCellRenderer {
-        public static final int K = 1024;
+        static final int K = 1024;
 
-        public MySizeRenderer() {
+        MySizeRenderer() {
             setHorizontalAlignment(SwingConstants.RIGHT);
         }
 
@@ -346,12 +346,12 @@ public class MyFileChooser
         }
     }
 
-    private class MyDateRenderer
+    private static class MyDateRenderer
             extends DefaultTableCellRenderer {
         //        private final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm dd/MM/yyyy");
         private final SimpleDateFormat sdf = new SimpleDateFormat("H:mm d/M/y");
 
-        public MyDateRenderer() {
+        MyDateRenderer() {
             setHorizontalAlignment(SwingConstants.RIGHT);
         }
 

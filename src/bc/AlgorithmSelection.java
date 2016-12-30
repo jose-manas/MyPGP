@@ -92,12 +92,12 @@ public class AlgorithmSelection {
         return HashAlgorithmTags.SHA1;
     }
 
-    public static int getHashAlgo(Key signingKey) {
+    static int getHashAlgo(Key signingKey) {
         List<Integer> preferences = null;
         PGPPublicKey publicKey = signingKey.getPublicKey();
         int[] algos = getPreferredHashAlgos(publicKey);
         if (algos != null && algos.length != 0) {
-            List<Integer> result = new ArrayList<Integer>();
+            List<Integer> result = new ArrayList<>();
             for (int algo : algos)
                 result.add(algo);
             preferences = result;
@@ -123,7 +123,7 @@ public class AlgorithmSelection {
         return null;
     }
 
-    public static int getCompressionAlgo(List<Key> publicKeys) {
+    static int getCompressionAlgo(List<Key> publicKeys) {
         List<Integer> preferences = null;
         for (Key key : publicKeys) {
             PGPPublicKey publicKey = key.getPublicKey();
@@ -152,7 +152,7 @@ public class AlgorithmSelection {
     }
 
     private static List<PGPSignatureSubpacketVector> getSignatureSubpacketVectors(PGPPublicKey key) {
-        List<PGPSignatureSubpacketVector> result = new ArrayList<PGPSignatureSubpacketVector>();
+        List<PGPSignatureSubpacketVector> result = new ArrayList<>();
         if (key.isMasterKey()) {
             for (int certificationType : MASTER_KEY_CERTIFICATION_TYPES) {
                 Iterator eIt = key.getSignaturesOfType(certificationType);
@@ -174,7 +174,7 @@ public class AlgorithmSelection {
     }
 
     private static List<Integer> filter(List<Integer> preferences, int[] algos) {
-        List<Integer> result = new ArrayList<Integer>();
+        List<Integer> result = new ArrayList<>();
         if (preferences == null) {
             for (int algo : algos)
                 result.add(algo);

@@ -61,8 +61,10 @@ public class Main {
                 }
             });
 
-            for (File file : jars)
-                ClasspathHacker.addFile(file);
+            if (jars != null) {
+                for (File file : jars)
+                    ClasspathHacker.addFile(file);
+            }
 
             MyPGP.start();
         } catch (NoHomeException nhe) {

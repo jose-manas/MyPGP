@@ -11,8 +11,8 @@ public class PemSplitter
     public static final int CR = 0x0d;
     public static final int LF = 0x0a;
 
-    public static final String BEGIN_PGP = "-----BEGIN PGP ";
-    public static final String END_PGP = "-----END PGP ";
+    private static final String BEGIN_PGP = "-----BEGIN PGP ";
+    private static final String END_PGP = "-----END PGP ";
 
     private final BufferedReader reader;
     private String nextLine;

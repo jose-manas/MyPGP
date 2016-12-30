@@ -52,7 +52,7 @@ import java.util.prefs.Preferences;
 
 /**
  * @author Jose A. Manas
- * @version 21.8.2014
+ * @version 30.12.2016
  */
 public class MyPGP {
     private static MyPGP instance;
@@ -457,17 +457,21 @@ public class MyPGP {
             log("%s: 0%n", Text.get("public_keys"));
             return;
         }
-        for (File redFile : files) {
-            log(Text.get("encrypt") + " " + redFile.getName());
-            try {
-                BcUtilsFiles.encrypt(redFile, encryptingKeys);
-            } catch (PGPException e) {
-                log2(e.toString());
-                if (e.getUnderlyingException() != null)
-                    MyLogger.dump(e.getUnderlyingException(), Text.get("encrypt"));
-            } catch (Exception e) {
-                MyLogger.dump(e, Text.get("encrypt"));
+        try {
+            boolean armor = ArmorPanel.getArmor(Text.get("encrypt"), true);
+            for (File redFile : files) {
+                log(Text.get("encrypt") + " " + redFile.getName());
+                try {
+                    BcUtilsFiles.encrypt(redFile, encryptingKeys, armor);
+                } catch (PGPException e) {
+                    log2(e.toString());
+                    if (e.getUnderlyingException() != null)
+                        MyLogger.dump(e.getUnderlyingException(), Text.get("encrypt"));
+                } catch (Exception e) {
+                    MyLogger.dump(e, Text.get("encrypt"));
+                }
             }
+        } catch (PasswordCancelled ignored) {
         }
     }
 
@@ -687,7 +691,8 @@ public class MyPGP {
             for (File redFile : files) {
                 try {
                     log1(Text.get("sign") + " " + redFile.getName());
-                    BcUtilsFiles.sign(redFile, signingKeys, passwords);
+                    boolean armor = ArmorPanel.getArmor(Text.get("sign"), false);
+                    BcUtilsFiles.sign(redFile, signingKeys, passwords, armor);
                 } catch (PGPException e) {
                     log2(e.toString());
                     if (e.getUnderlyingException() != null)
@@ -741,7 +746,8 @@ public class MyPGP {
             for (File redFile : files) {
                 try {
                     log(Text.get("encrypt_sign") + " " + redFile.getName());
-                    BcUtilsFiles.encrypt_sign(redFile, signingKeys, encryptingKeys, passwords);
+                    boolean armor = ArmorPanel.getArmor(Text.get("encrypt_sign"), true);
+                    BcUtilsFiles.encrypt_sign(redFile, signingKeys, encryptingKeys, passwords, armor);
                 } catch (PGPException e) {
                     log2(e.toString());
                     if (e.getUnderlyingException() != null)
@@ -775,7 +781,7 @@ public class MyPGP {
         }
     }
 
-    private class ViewClipAction
+    private static class ViewClipAction
             extends AbstractAction {
         private ViewClipAction() {
             super(Text.get("view"));
