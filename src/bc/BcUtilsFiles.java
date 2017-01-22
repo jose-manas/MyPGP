@@ -49,7 +49,7 @@ public class BcUtilsFiles {
 //        boolean armor = true;
         boolean withIntegrityCheck = true;
 
-        File blackFile = mkFile(redFile, armor ? ".asc" : ".pgp");
+        File blackFile = mkFile(Text.get("encrypt"), redFile, armor ? ".asc" : ".pgp");
         if (blackFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
@@ -128,7 +128,7 @@ public class BcUtilsFiles {
         if (privateKey == null)
             return;
 
-        File outFile = mkFile(inFile, armor ? ".asc" : ".sig");
+        File outFile = mkFile(Text.get("sign"), inFile, armor ? ".asc" : ".sig");
         if (outFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
@@ -201,7 +201,7 @@ public class BcUtilsFiles {
             privateKeys[i] = privateKey;
         }
 
-        File outFile = mkFile(inFile, armor ? ".asc" : ".sig");
+        File outFile = mkFile(Text.get("sign"), inFile, armor ? ".asc" : ".sig");
         if (outFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(outFile));
@@ -287,7 +287,7 @@ public class BcUtilsFiles {
             privateKeys[i] = privateKey;
         }
 
-        File blackFile = mkFile(redFile, armor ? ".asc" : ".pgp");
+        File blackFile = mkFile(Text.get("encrypt"), redFile, armor ? ".asc" : ".pgp");
         if (blackFile == null)
             return;
         OutputStream os = new BufferedOutputStream(new FileOutputStream(blackFile));
@@ -581,7 +581,7 @@ public class BcUtilsFiles {
         } while (x instanceof PGPMarker);
 
         if (x instanceof PGPEncryptedDataList) {
-            File redFile = mkRedFile(blackFile);
+            File redFile = mkRedFile(Text.get("process"), blackFile);
             if (redFile == null)
                 redFile = new File(blackFile.getParent(), "mypgp.out");
             decrypt(redFile, blackFile, passwords);
@@ -589,7 +589,7 @@ public class BcUtilsFiles {
         }
 
         if (x instanceof PGPSignatureList) {
-            File redFile = mkRedFile(blackFile);
+            File redFile = mkRedFile(Text.get("process"), blackFile);
             String filenameString = redFile == null ? "no" : redFile.getName();
             BcUtils.log1(String.format("%s == %s(%s) :",
                     blackFile.getName(), Text.get("signature"), filenameString));
@@ -657,14 +657,14 @@ public class BcUtilsFiles {
      * @param ext  extension (with starting dot).
      * @return file with cooked name.
      */
-    private static File mkFile(File base, String ext) {
+    private static File mkFile(String op, File base, String ext) {
         FilePanel panel = new FilePanel(base, ext);
         File file = panel.getOvwFile();
         if (!file.exists())
             return file;
 
         int ret = JOptionPane.showConfirmDialog(null,
-                panel, "",
+                panel, op,
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
                 Icons.getPgpIcon());
@@ -673,7 +673,7 @@ public class BcUtilsFiles {
         return panel.getSelectedFile();
     }
 
-    private static File mkRedFile(File blackFile) {
+    private static File mkRedFile(String op, File blackFile) {
         String redFilename;
         String blackFilename = blackFile.getName();
         if (blackFilename.endsWith(".asc"))
@@ -693,7 +693,7 @@ public class BcUtilsFiles {
 
         FilePanel panel = new FilePanel(file);
         int ret = JOptionPane.showConfirmDialog(null,
-                panel, "",
+                panel, op,
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
                 Icons.getPgpIcon());

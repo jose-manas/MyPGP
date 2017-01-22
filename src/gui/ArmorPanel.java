@@ -17,14 +17,17 @@ class ArmorPanel
     private JCheckBox box1;
     private JCheckBox box2;
 
-    private ArmorPanel(boolean armor) {
+    private ArmorPanel(boolean armor, String b_ext) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         ButtonGroup group = new ButtonGroup();
         box1 = new JCheckBox(Text.get("text") + ": .asc");
-        box2 = new JCheckBox(Text.get("binary") + ": .pgp");
+        box2 = new JCheckBox(Text.get("binary") + ": " + b_ext);
         group.add(box1);
         group.add(box2);
-        box1.setSelected(armor);
+        if (armor)
+            box1.setSelected(true);
+        else
+            box2.setSelected(true);
 
         box1.setAlignmentX(Component.LEFT_ALIGNMENT);
         box2.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -36,9 +39,9 @@ class ArmorPanel
         return box1.isSelected();
     }
 
-    static boolean getArmor(String op, boolean armor)
+    static boolean getArmor(String op, boolean armor, String b_ext)
             throws PasswordCancelled {
-        ArmorPanel panel = new ArmorPanel(armor);
+        ArmorPanel panel = new ArmorPanel(armor, b_ext);
         int ret = JOptionPane.showConfirmDialog(null,
                 panel, op,
                 JOptionPane.OK_CANCEL_OPTION,

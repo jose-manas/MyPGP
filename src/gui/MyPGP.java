@@ -132,7 +132,7 @@ public class MyPGP {
         boolean listsExpanded = keysTree.isExpanded(new TreePath(listsBranch.getPath()));
         boolean directoryExpanded = keysTree.isExpanded(new TreePath(directoryBranch.getPath()));
 
-        Set<Directory> expandedDirectories = new HashSet<Directory>();
+        Set<Directory> expandedDirectories = new HashSet<>();
         readExpandedDirectories(expandedDirectories, directoryBranch);
 
         KeyDB2.getInstance().reset();
@@ -267,7 +267,7 @@ public class MyPGP {
 
         List<Long> signerList = key.getSigIds();
         if (signerList.size() > 0) {
-            Set<Long> extHierarchy = new HashSet<Long>(hierarchy);
+            Set<Long> extHierarchy = new HashSet<>(hierarchy);
             extHierarchy.addAll(signerList);
             DefaultMutableTreeNode signers = new DefaultMutableTreeNode(Text.get("signers") + " ...");
             keyNode.add(signers);
@@ -430,7 +430,7 @@ public class MyPGP {
     }
 
     private void processSelection(File[] files) {
-        Map<Long, char[]> passwords = new HashMap<Long, char[]>();
+        Map<Long, char[]> passwords = new HashMap<>();
         try {
             for (File blackFile : files) {
                 try {
@@ -458,7 +458,7 @@ public class MyPGP {
             return;
         }
         try {
-            boolean armor = ArmorPanel.getArmor(Text.get("encrypt"), true);
+            boolean armor = ArmorPanel.getArmor(Text.get("encrypt"), true, ".pgp");
             for (File redFile : files) {
                 log(Text.get("encrypt") + " " + redFile.getName());
                 try {
@@ -534,7 +534,7 @@ public class MyPGP {
     }
 
     private List<Key> getSecretKeys() {
-        List<Key> keys = new ArrayList<Key>();
+        List<Key> keys = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
             return keys;
@@ -551,7 +551,7 @@ public class MyPGP {
     }
 
     private List<Key> getSigningKeys() {
-        List<Key> keys = new ArrayList<Key>();
+        List<Key> keys = new ArrayList<>();
         for (Key key : getSecretKeys()) {
             if (key.getSigningKey() != null)
                 keys.add(key);
@@ -563,7 +563,7 @@ public class MyPGP {
     }
 
     private List<Key> getPublicKeys() {
-        List<Key> keys = new ArrayList<Key>();
+        List<Key> keys = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
             return keys;
@@ -590,7 +590,7 @@ public class MyPGP {
     }
 
     private List<Key> getEncryptingKeys() {
-        List<Key> keys = new ArrayList<Key>();
+        List<Key> keys = new ArrayList<>();
         for (Key key : getPublicKeys()) {
             if (key.getEncryptingKey() != null)
                 keys.add(key);
@@ -602,7 +602,7 @@ public class MyPGP {
     }
 
     private List<DefaultMutableTreeNode> getLists() {
-        List<DefaultMutableTreeNode> lists = new ArrayList<DefaultMutableTreeNode>();
+        List<DefaultMutableTreeNode> lists = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
             return lists;
@@ -634,7 +634,7 @@ public class MyPGP {
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
-    public Window getWindow() {
+    Window getWindow() {
         return frame;
     }
 
@@ -678,8 +678,10 @@ public class MyPGP {
                 return;
             }
 
-            Map<Key, char[]> passwords = new HashMap<Key, char[]>();
+            boolean armor;
+            Map<Key, char[]> passwords = new HashMap<>();
             try {
+                armor = ArmorPanel.getArmor(Text.get("sign"), false, ".sig");
                 for (Key signingKey : signingKeys) {
                     char[] password = GetPassword.getInstance().getDecryptionPassword(signingKey.toString());
                     passwords.put(signingKey, password);
@@ -691,7 +693,6 @@ public class MyPGP {
             for (File redFile : files) {
                 try {
                     log1(Text.get("sign") + " " + redFile.getName());
-                    boolean armor = ArmorPanel.getArmor(Text.get("sign"), false);
                     BcUtilsFiles.sign(redFile, signingKeys, passwords, armor);
                 } catch (PGPException e) {
                     log2(e.toString());
@@ -733,7 +734,7 @@ public class MyPGP {
                 return;
             }
 
-            Map<Key, char[]> passwords = new HashMap<Key, char[]>();
+            Map<Key, char[]> passwords = new HashMap<>();
             try {
                 for (Key signingKey : signingKeys) {
                     char[] password = GetPassword.getInstance().getDecryptionPassword(signingKey.toString());
@@ -746,7 +747,7 @@ public class MyPGP {
             for (File redFile : files) {
                 try {
                     log(Text.get("encrypt_sign") + " " + redFile.getName());
-                    boolean armor = ArmorPanel.getArmor(Text.get("encrypt_sign"), true);
+                    boolean armor = ArmorPanel.getArmor(Text.get("encrypt_sign"), true, ".pgp");
                     BcUtilsFiles.encrypt_sign(redFile, signingKeys, encryptingKeys, passwords, armor);
                 } catch (PGPException e) {
                     log2(e.toString());
@@ -959,7 +960,7 @@ public class MyPGP {
         }
     }
 
-    public void fileDeleted(SecureDeleteWorker worker) {
+    void fileDeleted(SecureDeleteWorker worker) {
         try {
             fch.rescanCurrentDirectory();
             Exception executonException = worker.getExecutonException();
@@ -1069,7 +1070,7 @@ public class MyPGP {
         }
     }
 
-    public void keyGenerated(KeyGeneratingThread task) {
+    void keyGenerated(KeyGeneratingThread task) {
         try {
             long delta = task.getDelta();
             log2(String.format("%dm %ds", delta / 60, delta % 60));
@@ -1170,7 +1171,7 @@ public class MyPGP {
                 log("%s: 0%n", Text.get("secret_keys"));
                 return;
             }
-            File where = getFile(Text.get("export"));
+            File where = getFile();
             if (where == null)
                 return;
 
@@ -1184,7 +1185,7 @@ public class MyPGP {
             }
         }
 
-        private File getFile(String s) {
+        private File getFile() {
             if (keyFileChooser == null) {
                 keyFileChooser = new MyDirectoryChooser();
                 keyFileChooser.setDirectory(Info.getHome());

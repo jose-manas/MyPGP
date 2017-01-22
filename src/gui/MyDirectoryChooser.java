@@ -12,7 +12,8 @@ import java.io.File;
 import java.util.ArrayList;
 
 /**
- * Created by jam on 06/03/2015.
+ * @author Jose A. Manas
+ * @version 6.3.2015
  */
 class MyDirectoryChooser
         extends JPanel {

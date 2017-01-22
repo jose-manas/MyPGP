@@ -10,10 +10,11 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Created by jam on 08/05/2015.
+ * @author Jose A. Manas
+ * @version 8.5.2015
  */
 public class MyLogger {
-    public static final SimpleDateFormat DATE = new SimpleDateFormat("HHmmss");
+    private static final SimpleDateFormat DATE = new SimpleDateFormat("HHmmss");
 
     public static void record(Throwable e) {
         try {
