@@ -4,6 +4,7 @@ import gui.MyPGP;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.security.Security;
@@ -38,6 +39,9 @@ public class Provider {
 
             final Field isRestrictedField = jceSecurity.getDeclaredField("isRestricted");
             isRestrictedField.setAccessible(true);
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(isRestrictedField, isRestrictedField.getModifiers() & ~Modifier.FINAL);
             isRestrictedField.set(null, false);
 
             final Field defaultPolicyField = jceSecurity.getDeclaredField("defaultPolicy");
