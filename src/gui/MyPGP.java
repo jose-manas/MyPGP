@@ -205,8 +205,9 @@ public class MyPGP {
 
         secKeyBranch = new DefaultMutableTreeNode(Text.get("secret_keys"));
         keysTreeRoot.add(secKeyBranch);
-        for (Key key : KeyDB2.getInstance().getSecretKeys())
-            secKeyBranch.add(mkTreeKey(key));
+//        for (Key key : KeyDB2.getInstance().getSecretKeys())
+//            secKeyBranch.add(mkTreeKey(key));
+        mkSecretTreeDirectory(secKeyBranch, directory);
 
         listsBranch = new DefaultMutableTreeNode(Text.get("lists"));
         keysTreeRoot.add(listsBranch);
@@ -223,6 +224,33 @@ public class MyPGP {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(list);
         for (Key key : list.getMembers(true))
             node.add(mkTreeKey(key));
+        return node;
+    }
+
+    private void mkSecretTreeDirectory(
+            DefaultMutableTreeNode root, Directory directory) {
+        for (Key key : directory.getKeys()) {
+            if (key.isSecret())
+                root.add(mkTreeKey(key));
+        }
+        for (Directory sub : directory.getSubdirs()) {
+            DefaultMutableTreeNode newChild = mkSecretTreeDirectory(sub);
+            if (newChild.getChildCount() > 0)
+                root.add(newChild);
+        }
+    }
+
+    private DefaultMutableTreeNode mkSecretTreeDirectory(Directory directory) {
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(directory);
+        for (Key key : directory.getKeys()) {
+            if (key.isSecret())
+                node.add(mkTreeKey(key));
+        }
+        for (Directory sub : directory.getSubdirs()) {
+            DefaultMutableTreeNode newChild = mkSecretTreeDirectory(sub);
+            if (newChild.getChildCount() > 0)
+                node.add(newChild);
+        }
         return node;
     }
 
