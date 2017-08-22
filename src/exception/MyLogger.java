@@ -17,6 +17,8 @@ public class MyLogger {
     private static final SimpleDateFormat DATE = new SimpleDateFormat("HHmmss");
 
     public static void record(Throwable e) {
+        if (e instanceof PasswordCancelled)
+            return;
         try {
             String home = System.getProperty("user.home");
             String filename = String.format("mypgp_%s.txt", DATE.format(new Date()));

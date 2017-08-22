@@ -38,7 +38,7 @@ public class ToString {
             case SymmetricKeyAlgorithmTags.IDEA:
                 return "IDEA (128)";
             case SymmetricKeyAlgorithmTags.TRIPLE_DES:
-                return "3DES (112/168)";
+                return "3DES (168)";    // rfc 4880 specifies 168 derived from 192
             case SymmetricKeyAlgorithmTags.CAST5:
                 return "CAST5 (128)";
             case SymmetricKeyAlgorithmTags.BLOWFISH:

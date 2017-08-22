@@ -68,7 +68,7 @@ public class Main {
 
             MyPGP.start();
         } catch (NoHomeException nhe) {
-            MyLogger.record(nhe);
+//            MyLogger.record(nhe);
             String message = "no HOME directory";
             String title = Version.VERSION;
             JOptionPane.showMessageDialog(null,
