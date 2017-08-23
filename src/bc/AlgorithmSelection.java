@@ -69,7 +69,7 @@ public class AlgorithmSelection {
             if (algos != null && algos.length > 0)
                 return algos;
         }
-        return null;
+        return new int[]{SymmetricKeyAlgorithmTags.TRIPLE_DES}; // default
     }
 
     public static int getHashAlgo(List<Key> signingKeys) {
@@ -120,7 +120,7 @@ public class AlgorithmSelection {
             if (algos != null && algos.length > 0)
                 return algos;
         }
-        return null;
+        return new int[]{HashAlgorithmTags.SHA1};  // default
     }
 
     static int getCompressionAlgo(List<Key> publicKeys) {
@@ -148,7 +148,7 @@ public class AlgorithmSelection {
             if (algos != null && algos.length > 0)
                 return algos;
         }
-        return null;
+        return new int[]{CompressionAlgorithmTags.ZIP};    // default
     }
 
     private static List<PGPSignatureSubpacketVector> getSignatureSubpacketVectors(PGPPublicKey key) {
