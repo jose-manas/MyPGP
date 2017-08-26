@@ -33,7 +33,7 @@ public class AlgoPanel2
     private static String selectedEncryptAlgo = RSA;
     private static int selectedEncryptSize = 2048;
 
-    public AlgoPanel2() {
+    AlgoPanel2() {
         super(new SpringLayout());
 
         sign = new JCheckBox(Text.get("sign"));
@@ -80,7 +80,7 @@ public class AlgoPanel2
         return selectedSignAlgo;
     }
 
-    public int getSignSize() {
+    int getSignSize() {
         try {
             return selectedSignSize;
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class AlgoPanel2
             return null;
     }
 
-    public int getEncryptSize() {
+    int getEncryptSize() {
         try {
             if (encrypt.isSelected())
                 return selectedEncryptSize;
@@ -110,7 +110,7 @@ public class AlgoPanel2
             implements ActionListener {
         private final JPopupMenu popupMenu;
 
-        public SignSelectionAction() {
+        SignSelectionAction() {
             popupMenu = new JPopupMenu("sign");
             add(popupMenu, RSA, 1024, 2048, 3072, 4096);
             add(popupMenu, DSA, 1024, 2048, 3072, 4096);
@@ -141,7 +141,7 @@ public class AlgoPanel2
             extends JMenuItem {
         private static final String TITLE = "ECDSA (Curve-25519)";
 
-        public SignOption_Curve25519() {
+        SignOption_Curve25519() {
             super(TITLE);
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -155,7 +155,7 @@ public class AlgoPanel2
 
     private class SignOption
             extends JMenuItem {
-        public SignOption(final String algo, final int size) {
+        SignOption(final String algo, final int size) {
             super(String.format("%s (%d)", algo, size));
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -171,7 +171,7 @@ public class AlgoPanel2
             implements ActionListener {
         private final JPopupMenu popupMenu;
 
-        public EncryptSelectionAction() {
+        EncryptSelectionAction() {
             popupMenu = new JPopupMenu("encrypt");
             add(popupMenu, RSA, 1024, 2048, 3072, 4096);
             add(popupMenu, ELGAMAL_IETF, 1024, 1536, 2048, 3072, 4096);
@@ -199,7 +199,7 @@ public class AlgoPanel2
 
     private class EncryptOption
             extends JMenuItem {
-        public EncryptOption(final String algo, final int size) {
+        EncryptOption(final String algo, final int size) {
             super(String.format("%s (%d)", algo, size));
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {

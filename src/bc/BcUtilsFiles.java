@@ -43,7 +43,7 @@ public class BcUtilsFiles {
     public static void encrypt(File redFile, List<Key> publicKeys, boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
 //        boolean armor = true;
@@ -134,7 +134,7 @@ public class BcUtilsFiles {
         ) {
             int signAlgo = publicKey.getAlgorithm();
             int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-            MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+            MyPGP.log2(String.format("%s: %s(%s)",
                     signerKey,
                     ToString.publicKey(signAlgo),
                     ToString.hash(hashAlgo)));
@@ -207,7 +207,7 @@ public class BcUtilsFiles {
 
                 int signAlgo = publicKey.getAlgorithm();
                 int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+                MyPGP.log2(String.format("%s: %s(%s)",
                         signerKey,
                         ToString.publicKey(signAlgo),
                         ToString.hash(hashAlgo)));
@@ -251,7 +251,7 @@ public class BcUtilsFiles {
                                     boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
-        MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
 
 //        boolean armor = true;
@@ -287,8 +287,8 @@ public class BcUtilsFiles {
     }
 
     private static void encrypt_sign_1(File blackFile, File redFile, OutputStream out, List<Key> signerKeyList,
-                                          int compressionAlgo, Map<Key, char[]> passwords,
-                                          PGPEncryptedDataGenerator encryptedDataGenerator)
+                                       int compressionAlgo, Map<Key, char[]> passwords,
+                                       PGPEncryptedDataGenerator encryptedDataGenerator)
             throws IOException, PGPException {
         PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
         PGPPrivateKey[] privateKeys = new PGPPrivateKey[signerKeyList.size()];
@@ -315,7 +315,7 @@ public class BcUtilsFiles {
 
                     int signAlgo = publicKey.getAlgorithm();
                     int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                    MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+                    MyPGP.log2(String.format("%s: %s(%s)",
                             signerKey,
                             ToString.publicKey(signAlgo),
                             ToString.hash(hashAlgo)));
@@ -384,7 +384,7 @@ public class BcUtilsFiles {
             for (PGPPublicKeyEncryptedData item : list) {
                 pbe = item;
                 long id = pbe.getKeyID();
-                Key key = KeyDB2.getInstance().getKey(id);
+                Key key = KeyDB2.getKey(id);
                 if (key == null)
                     continue;
                 char[] password = passwords.get(id);
@@ -393,7 +393,7 @@ public class BcUtilsFiles {
                 if (password == null || password.length == 0)
                     continue;
                 passwords.put(id, password);
-                PGPSecretKey pgpSecretKey = KeyDB2.getInstance().getSecretKey(id);
+                PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);
                 sKey = BcUtils.getPrivateKey(pgpSecretKey, password);
                 if (sKey != null)
                     break;
@@ -411,7 +411,7 @@ public class BcUtilsFiles {
                             .setProvider("BC")
                             .build(sKey);
             int encryptAlgo = pbe.getSymmetricAlgorithm(factory);
-            MyPGP.getInstance().log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+            MyPGP.log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
             try (InputStream clear = pbe.getDataStream(factory)) {
                 PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(clear);
 
@@ -498,7 +498,7 @@ public class BcUtilsFiles {
         BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
-        Key key = KeyDB2.getInstance().getKey(signature.getKeyID());
+        Key key = KeyDB2.getKey(signature.getKeyID());
         if (key == null) {
             BcUtils.log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
             return;
@@ -725,25 +725,6 @@ public class BcUtilsFiles {
             os.write(buffer, 0, n);
         }
     }
-
-//    private static void close(InputStream is) {
-//        if (is == null)
-//            return;
-//        try {
-//            is.close();
-//        } catch (Exception ignored) {
-//        }
-//    }
-
-//    private static void close(OutputStream os) {
-//        if (os == null)
-//            return;
-//        try {
-//            os.close();
-//        } catch (Exception ignored) {
-//            ignored.printStackTrace();
-//        }
-//    }
 
     private static OutputStream getOutputStream(boolean armor, OutputStream os) {
         if (armor) {

@@ -33,7 +33,7 @@ public class BcUtilsClipboard {
     public static String encrypt(String redText, List<Key> publicKeys)
             throws IOException, PGPException {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
         boolean armor = true;
@@ -116,7 +116,7 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+        MyPGP.log2(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -157,7 +157,7 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+        MyPGP.log2(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -203,7 +203,7 @@ public class BcUtilsClipboard {
     public static String encrypt_sign(String redText, List<Key> publicKeys, Key signerKey, char[] password)
             throws IOException, PGPException {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.getInstance().log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
         PGPSecretKey signingKey = signerKey.getSigningKey();
@@ -243,7 +243,7 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.getInstance().log2(String.format("%s: %s(%s)",
+        MyPGP.log2(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -304,13 +304,13 @@ public class BcUtilsClipboard {
         for (PGPPublicKeyEncryptedData item : list) {
             pbe = item;
             long id = pbe.getKeyID();
-            Key key = KeyDB2.getInstance().getKey(id);
+            Key key = KeyDB2.getKey(id);
             if (key == null)
                 continue;
             char[] password = GetPassword.getInstance().getDecryptionPassword(Text.get("decrypt") + ": " + key);
             if (password == null || password.length == 0)
                 continue;
-            PGPSecretKey pgpSecretKey = KeyDB2.getInstance().getSecretKey(id);
+            PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);
             sKey = BcUtils.getPrivateKey(pgpSecretKey, password);
             if (sKey != null)
                 break;
@@ -328,7 +328,7 @@ public class BcUtilsClipboard {
                         .setProvider("BC")
                         .build(sKey);
         int encryptAlgo = pbe.getSymmetricAlgorithm(factory);
-        MyPGP.getInstance().log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        MyPGP.log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         InputStream clear = pbe.getDataStream(factory);
         PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(clear);
 
@@ -377,7 +377,7 @@ public class BcUtilsClipboard {
         BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
-        Key key = KeyDB2.getInstance().getKey(signature.getKeyID());
+        Key key = KeyDB2.getKey(signature.getKeyID());
         if (key == null) {
             BcUtils.log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
             return blackText;

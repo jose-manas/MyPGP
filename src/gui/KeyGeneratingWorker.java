@@ -24,13 +24,11 @@ public class KeyGeneratingWorker
 
     private JDialog frame;
     private JProgressBar progressBar;
-    private final MyPGP myPGP;
 
-    public KeyGeneratingWorker(MyPGP myPGP, KeyGeneratingThread task) {
-        this.myPGP = myPGP;
+    public KeyGeneratingWorker(KeyGeneratingThread task) {
         this.task = task;
 
-        frame = new JDialog(myPGP.getWindow(), Text.get("wait"));
+        frame = new JDialog(MyPGP.getWindow(), Text.get("wait"));
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.setBackground(Color.WHITE);
         frame.addWindowListener(new WindowListener());
@@ -76,7 +74,7 @@ public class KeyGeneratingWorker
     @Override
     protected void done() {
         frame.dispose();
-        myPGP.keyGenerated(task);
+        MyPGP.keyGenerated(task);
     }
 
     private class CancelActionListener

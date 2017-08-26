@@ -12,7 +12,7 @@ import java.util.prefs.Preferences;
  */
 public class Info {
     //    public static final String CONFIGURATION_MYPGP = "configuration.mypgp";
-    public static final String DATABASE_MYPGP = "database.mypgp";
+    private static final String DATABASE_MYPGP = "database.mypgp";
 
     private static final Preferences preferences =
             Preferences.userRoot().node("mypgp");
@@ -55,7 +55,7 @@ public class Info {
         int dot = "alias.".length();
         int eq = line.indexOf('=');
         if (eq > 0)
-            KeyDB2.getInstance().setAlias(line.substring(dot, eq).trim(), line.substring(eq + 1).trim());
+            KeyDB2.setAlias(line.substring(dot, eq).trim(), line.substring(eq + 1).trim());
     }
 
     private static void loadList(String line) {
@@ -69,10 +69,10 @@ public class Info {
             if (!s[0].equalsIgnoreCase("list"))
                 return;
             int uid = Integer.parseInt(s[1]);
-            KeyList list = KeyListDB.getInstance().get(uid);
+            KeyList list = KeyListDB.get(uid);
             if (list == null) {
                 list = new KeyList(uid, "");
-                KeyListDB.getInstance().add(list);
+                KeyListDB.add(list);
             }
             if (s[2].equalsIgnoreCase("name"))
                 list.setName(line.substring(eq + 1).trim());
@@ -89,8 +89,8 @@ public class Info {
             File configuration = new File(home, DATABASE_MYPGP);
             OutputStream os = new FileOutputStream(configuration);
             writer = new PrintWriter(new OutputStreamWriter(os, "UTF-8"));
-            KeyDB2.getInstance().saveKeys(writer);
-            KeyListDB.getInstance().saveLists(writer);
+            KeyDB2.saveKeys(writer);
+            KeyListDB.saveLists(writer);
         } catch (Exception e) {
             MyLogger.dump(e, "save info");
         } finally {

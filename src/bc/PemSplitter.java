@@ -8,9 +8,6 @@ import java.util.Iterator;
 
 public class PemSplitter
         implements Iterator<InputStream> {
-    public static final int CR = 0x0d;
-    public static final int LF = 0x0a;
-
     private static final String BEGIN_PGP = "-----BEGIN PGP ";
     private static final String END_PGP = "-----END PGP ";
 
@@ -54,11 +51,6 @@ public class PemSplitter
             }
             if (nextLine == null)
                 break;
-//            if (nextLine.length() > 0) {
-//                char ch = nextLine.charAt(nextLine.length() - 1);
-//                if (ch == CR || ch == LF)
-//                    System.out.println(nextLine);
-//            }
             if (nextLine.length() < BEGIN_PGP.length())
                 continue;
             if (nextLine.substring(0, BEGIN_PGP.length()).equalsIgnoreCase(BEGIN_PGP))

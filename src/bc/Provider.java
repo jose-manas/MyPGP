@@ -57,9 +57,9 @@ public class Provider {
             instance.setAccessible(true);
             defaultPolicy.add((Permission) instance.get(null));
 
-//            MyPGP.getInstance().log("Successfully removed cryptography restrictions");
+//            MyPGP.log("Successfully removed cryptography restrictions");
         } catch (final Exception e) {
-            MyPGP.getInstance().log("Failed to remove cryptography restrictions: " + e);
+            MyPGP.log("Failed to remove cryptography restrictions: " + e);
         }
     }
 

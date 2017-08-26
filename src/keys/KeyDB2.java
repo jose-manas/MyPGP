@@ -12,27 +12,22 @@ import java.util.*;
 // 24.6.2011 signatures
 // 19.7.2011 subkeys for encryption: ssb
 // 26.6.2013 only 1: static
+// 24.8.2017 remove singleton architecture
 
 /**
  * @author Jose A. Manas
  * @version 7.7.2012
  */
 public class KeyDB2 {
-    private static KeyDB2 instance = new KeyDB2();
+    private static Map<Long, Key> keys = new Hashtable<>();
+    private static Map<Long, PGPPublicKey> publicKeys = new Hashtable<>();
+    private static Map<Long, PGPSecretKey> secretKeys = new Hashtable<>();
 
-    public static KeyDB2 getInstance() {
-        return instance;
-    }
-
-    private Map<Long, Key> keys = new Hashtable<Long, Key>();
-    private Map<Long, PGPPublicKey> publicKeys = new Hashtable<Long, PGPPublicKey>();
-    private Map<Long, PGPSecretKey> secretKeys = new Hashtable<Long, PGPSecretKey>();
-
-    public Key getKey(long id) {
+    public static Key getKey(long id) {
         return keys.get(id);
     }
 
-    public Key getKey(String kid) {
+    public static Key getKey(String kid) {
         kid = kid.toLowerCase();
         for (Key key : keys.values()) {
             String kid1 = key.getKid().toLowerCase();
@@ -42,9 +37,8 @@ public class KeyDB2 {
         return null;
     }
 
-    public Set<Key> getSecretKeys() {
-//        Set<Key> keySet = new TreeSet<Key>(Key.KEY_COMPARATOR);
-        Set<Key> keySet = new TreeSet<Key>(new Comparator<Key>() {
+    public static Set<Key> getSecretKeys() {
+        Set<Key> keySet = new TreeSet<>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
 
             public int compare(Key key1, Key key2) {
@@ -58,21 +52,21 @@ public class KeyDB2 {
         return keySet;
     }
 
-    public PGPPublicKey getPublicKey(Long id) {
+    public static PGPPublicKey getPublicKey(Long id) {
         return publicKeys.get(id);
     }
 
-    public PGPSecretKey getSecretKey(Long id) {
+    public static PGPSecretKey getSecretKey(Long id) {
         return secretKeys.get(id);
     }
 
-    public void setAlias(long kid, String alias) {
+    public static void setAlias(long kid, String alias) {
         Key key = keys.get(kid);
         if (key != null)
             key.setAlias(alias);
     }
 
-    public void setAlias(String kid, String alias) {
+    public static void setAlias(String kid, String alias) {
         kid = kid.toLowerCase();
         for (Key key : keys.values()) {
             String kid1 = key.getKid().toLowerCase();
@@ -83,8 +77,8 @@ public class KeyDB2 {
         }
     }
 
-    void saveKeys(PrintWriter writer) {
-        Set<Key> unique = new HashSet<Key>();
+    static void saveKeys(PrintWriter writer) {
+        Set<Key> unique = new HashSet<>();
         unique.addAll(keys.values());
         for (Key key : unique) {
             if (key.hasAlias())
@@ -92,7 +86,7 @@ public class KeyDB2 {
         }
     }
 
-    public Key store(PGPPublicKey masterKey, PGPPublicKey publicKey) {
+    static Key store(PGPPublicKey masterKey, PGPPublicKey publicKey) {
         publicKeys.put(publicKey.getKeyID(), publicKey);
         if (masterKey == null) {
             System.out.println("no master key for " + publicKey);
@@ -111,7 +105,7 @@ public class KeyDB2 {
         return key;
     }
 
-    public Key store(PGPSecretKey masterKey, PGPSecretKey secretKey) {
+    static Key store(PGPSecretKey masterKey, PGPSecretKey secretKey) {
         secretKeys.put(secretKey.getKeyID(), secretKey);
         if (masterKey == null) {
             System.out.println("no master key for " + secretKey);
@@ -130,11 +124,13 @@ public class KeyDB2 {
         return key;
     }
 
-    public void reset() {
+    public static void reset() {
         keys.clear();
+        publicKeys.clear();
+        secretKeys.clear();
     }
 
-    public void trace(long id) {
+    public static void trace(long id) {
         Key key = keys.get(id);
         if (key != null)
             key.show();

@@ -21,14 +21,6 @@ import java.util.*;
  */
 public class Key
         implements Comparable {
-//    public static final Comparator<Key> KEY_COMPARATOR = new Comparator<Key>() {
-//        public int compare(Key key1, Key key2) {
-//            String name1 = key1.toString();
-//            String name2 = key2.toString();
-//            return name1.compareToIgnoreCase(name2);
-//        }
-//    };
-
     private static final int[] MASTER_KEY_CERTIFICATION_TYPES = new int[]{
             PGPSignature.POSITIVE_CERTIFICATION,
             PGPSignature.CASUAL_CERTIFICATION,
@@ -47,12 +39,11 @@ public class Key
     private List<String> moreNames;
     private String alias;
     private String fingerprint;
-//    private final List<Long> sigs = new ArrayList<Long>();
 
     private String corePresentation;
-    private Map<Long, PGPPublicKey> publicSubkeys = new HashMap<Long, PGPPublicKey>();
-    private Map<Long, PGPSecretKey> secretSubkeys = new HashMap<Long, PGPSecretKey>();
-    private final Set<Long> signerIds = new HashSet<Long>();
+    private Map<Long, PGPPublicKey> publicSubkeys = new HashMap<>();
+    private Map<Long, PGPSecretKey> secretSubkeys = new HashMap<>();
+    private final Set<Long> signerIds = new HashSet<>();
 
     public Key(PGPPublicKey publicKey) {
         setPublicKey(publicKey);
@@ -62,6 +53,21 @@ public class Key
         setSecretKey(secretKey);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Key key = (Key) o;
+
+        return kid != null ? kid.equals(key.kid) : key.kid == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return kid != null ? kid.hashCode() : 0;
+    }
+
     private void loadNames(Iterator it) {
         while (it.hasNext()) {
             String id = (String) it.next();
@@ -69,7 +75,7 @@ public class Key
                 name = id;
             } else {
                 if (moreNames == null)
-                    moreNames = new ArrayList<String>();
+                    moreNames = new ArrayList<>();
                 moreNames.add(id);
             }
         }
@@ -90,7 +96,7 @@ public class Key
      * @return list of signers different from its owner.
      */
     public List<Long> getSigIds() {
-        List<Long> shortList = new ArrayList<Long>();
+        List<Long> shortList = new ArrayList<>();
         for (Long sid : signerIds) {
             if (shortList.contains(sid))
                 continue;
@@ -154,7 +160,7 @@ public class Key
             this.alias = alias;
     }
 
-    public boolean hasAlias() {
+    boolean hasAlias() {
         return alias != null && alias.length() > 0;
     }
 
@@ -245,7 +251,7 @@ public class Key
         fingerprint = Hex.toHexString(publicKey.getFingerprint());
     }
 
-    public void setSecretKey(PGPSecretKey secretKey) {
+    private void setSecretKey(PGPSecretKey secretKey) {
         saveSigners(secretKey.getPublicKey().getSignatures());
         if (this.secretKey != null)
             return;
@@ -398,14 +404,14 @@ public class Key
     }
 
     public List<PGPPublicKey> getPublicKeyList() {
-        List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
+        List<PGPPublicKey> list = new ArrayList<>();
         list.add(publicKey);
         list.addAll(publicSubkeys.values());
         return list;
     }
 
     public List<PGPSecretKey> getSecretKeyList() {
-        List<PGPSecretKey> list = new ArrayList<PGPSecretKey>();
+        List<PGPSecretKey> list = new ArrayList<>();
         if (secretKey != null)
             list.add(secretKey);
         list.addAll(secretSubkeys.values());

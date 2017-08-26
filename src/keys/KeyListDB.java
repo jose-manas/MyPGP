@@ -7,26 +7,21 @@ import java.util.Set;
 import java.util.TreeSet;
 
 // 29.6.2011 clear before reloading
+// 24.8.2017 remove singleton architecture
 
 /**
  * @author Jose A. Manas
  * @version 1.6.2011
  */
 public class KeyListDB {
-    private static KeyListDB instance = new KeyListDB();
+    private static Map<Integer, KeyList> uidMap = new HashMap<Integer, KeyList>();
+    private static Set<KeyList> listSet = new TreeSet<KeyList>();
 
-    public static KeyListDB getInstance() {
-        return instance;
-    }
-
-    private Map<Integer, KeyList> uidMap = new HashMap<Integer, KeyList>();
-    private Set<KeyList> listSet = new TreeSet<KeyList>();
-
-    public KeyList get(int uid) {
+    public static KeyList get(int uid) {
         return uidMap.get(uid);
     }
 
-    public KeyList get(String name) {
+    public static KeyList get(String name) {
         for (KeyList list : uidMap.values()) {
             if (list.getName().equalsIgnoreCase(name))
                 return list;
@@ -34,32 +29,32 @@ public class KeyListDB {
         return null;
     }
 
-    public void clear() {
+    public static void clear() {
         uidMap.clear();
         listSet.clear();
     }
 
-    public void add(KeyList list) {
+    public static void add(KeyList list) {
         uidMap.put(list.getUid(), list);
         listSet.clear();
     }
 
-    public void removeList(KeyList list) {
+    public static void removeList(KeyList list) {
         uidMap.remove(list.getUid());
         listSet.clear();
     }
 
-    public void removeKey(Key key) {
+    public static void removeKey(Key key) {
         for (KeyList list : uidMap.values())
             list.remove(key);
     }
 
-    public void saveLists(PrintWriter writer) {
+    static void saveLists(PrintWriter writer) {
         for (KeyList list : uidMap.values())
             list.save(writer);
     }
 
-    public Set<KeyList> getListSet() {
+    public static Set<KeyList> getListSet() {
         if (listSet.isEmpty())
             listSet.addAll(uidMap.values());
         return listSet;

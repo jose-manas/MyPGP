@@ -66,7 +66,7 @@ public class KeyGenPanel
         return text.trim();
     }
 
-    public Date getExpireDate() {
+    Date getExpireDate() {
         String text = expireField.getText().trim();
         if (text.length() == 0) {
             // yesterday
@@ -109,11 +109,11 @@ public class KeyGenPanel
         return algoPanel.getEncryptAlgo();
     }
 
-    public int getSignSize() {
+    int getSignSize() {
         return algoPanel.getSignSize();
     }
 
-    public int getEncryptSize() {
+    int getEncryptSize() {
         return algoPanel.getEncryptSize();
     }
 }

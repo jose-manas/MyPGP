@@ -16,7 +16,6 @@ import java.util.List;
  */
 public class SecureDeleteWorker
         extends SwingWorker<Void, Long> {
-    private final MyPGP myPGP;
     private final File file;
     private long length;
 
@@ -24,12 +23,11 @@ public class SecureDeleteWorker
     private JProgressBar progressBar;
     private Exception executonException;
 
-    public SecureDeleteWorker(MyPGP myPGP, File file) {
-        this.myPGP = myPGP;
+    public SecureDeleteWorker(File file) {
         this.file = file;
         length = file.length();
 
-        frame = new JDialog(myPGP.getWindow(), Text.get("wait"));
+        frame = new JDialog(MyPGP.getWindow(), Text.get("wait"));
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.setBackground(Color.WHITE);
 
@@ -109,10 +107,10 @@ public class SecureDeleteWorker
     @Override
     protected void done() {
         frame.dispose();
-        myPGP.fileDeleted(this);
+        MyPGP.fileDeleted(this);
     }
 
-    public Exception getExecutonException() {
+    Exception getExecutonException() {
         return executonException;
     }
 }

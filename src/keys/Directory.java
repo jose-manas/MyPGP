@@ -27,10 +27,10 @@ public class Directory {
     private final File file;
     private final String name;
 
-    private List<File> children = new ArrayList<File>();
-    private Collection<Directory> subdirs = new TreeSet<Directory>(DIR_COMPARATOR);
-    private Collection<Key> keys = new HashSet<Key>();
-    private Map<File, Collection<Key>> keyloadlog = new HashMap<File, Collection<Key>>();
+    private List<File> children = new ArrayList<>();
+    private Collection<Directory> subdirs = new TreeSet<>(DIR_COMPARATOR);
+    private Collection<Key> keys = new HashSet<>();
+    private Map<File, Collection<Key>> keyloadlog = new HashMap<>();
 
     public static Directory load(File file) {
         Directory directory = new Directory(file);
@@ -40,7 +40,7 @@ public class Directory {
 
         for (File child : files) {
             if (skip(child)) {
-                MyPGP.getInstance().ignore(child.getAbsolutePath());
+                MyPGP.ignore(child.getAbsolutePath());
             } else if (child.isFile()) {
                 directory.children.add(child);
                 loadRings(directory, child);
@@ -79,7 +79,7 @@ public class Directory {
                 }
             }
         } catch (Exception e) {
-            MyPGP.getInstance().ignore(child.getAbsolutePath());
+            MyPGP.ignore(child.getAbsolutePath());
         } finally {
             if (splitter != null)
                 splitter.close();
@@ -87,27 +87,25 @@ public class Directory {
     }
 
     private static void loadPublicRing(Directory directory, File child, PGPPublicKeyRing ring) {
-        KeyDB2 keyDB2 = KeyDB2.getInstance();
         PGPPublicKey masterKey = null;
         Iterator keyIterator = ring.getPublicKeys();
         while (keyIterator.hasNext()) {
             PGPPublicKey pgpPublicKey = (PGPPublicKey) keyIterator.next();
             if (pgpPublicKey.isMasterKey())
                 masterKey = pgpPublicKey;
-            Key key = keyDB2.store(masterKey, pgpPublicKey);
+            Key key = KeyDB2.store(masterKey, pgpPublicKey);
             directory.add(child, key);
         }
     }
 
     private static void loadSecretRing(Directory directory, File child, PGPSecretKeyRing ring) {
-        KeyDB2 keyDB2 = KeyDB2.getInstance();
         PGPSecretKey masterKey = null;
         Iterator keyIterator = ring.getSecretKeys();
         while (keyIterator.hasNext()) {
             PGPSecretKey pgpSecretKey = (PGPSecretKey) keyIterator.next();
             if (pgpSecretKey.isMasterKey())
                 masterKey = pgpSecretKey;
-            Key key = keyDB2.store(masterKey, pgpSecretKey);
+            Key key = KeyDB2.store(masterKey, pgpSecretKey);
             directory.add(child, key);
         }
     }
@@ -122,7 +120,7 @@ public class Directory {
         keys.add(key);
         Collection<Key> kc = keyloadlog.get(file);
         if (kc == null) {
-            kc = new ArrayList<Key>();
+            kc = new ArrayList<>();
             keyloadlog.put(file, kc);
         }
         kc.add(key);
@@ -172,8 +170,7 @@ public class Directory {
     }
 
     public Collection<Key> getKeys() {
-//        Collection<Key> sorted = new TreeSet<Key>(Key.KEY_COMPARATOR);
-        Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
+        Set<Key> sorted = new TreeSet<>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
 
             public int compare(Key key1, Key key2) {

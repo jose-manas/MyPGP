@@ -32,7 +32,7 @@ class BcUtils {
                             build(password);
             return pgpSecretKey.extractPrivateKey(decryptor);
         } catch (PGPException e) {
-            MyPGP.getInstance().log2(Text.get("exception.password_needed"));
+            MyPGP.log2(Text.get("exception.password_needed"));
             return null;
         }
     }
@@ -59,17 +59,17 @@ class BcUtils {
         while (it.hasNext()) {
             Object next = it.next();
             if (!(next instanceof PGPPublicKeyEncryptedData)) {
-                MyPGP.getInstance().log2("unexpected packet: " + next.getClass().getSimpleName());
+                MyPGP.log2("unexpected packet: " + next.getClass().getSimpleName());
                 continue;
             }
             PGPPublicKeyEncryptedData item = (PGPPublicKeyEncryptedData) next;
             long id = item.getKeyID();
-            Key key = KeyDB2.getInstance().getKey(id);
+            Key key = KeyDB2.getKey(id);
             if (key == null) {
                 log2(String.format("%s: %s", Text.get("encrypted_for"), Key.mkId8(id)));
             } else {
                 log2(String.format("%s: %s", Text.get("encrypted_for"), key));
-                PGPSecretKey pgpSecretKey = KeyDB2.getInstance().getSecretKey(id);
+                PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);
                 if (pgpSecretKey != null)
                     list.add(item);
             }
@@ -94,7 +94,7 @@ class BcUtils {
         int hashAlgo = ops.getHashAlgorithm();
         log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
 
-        Key key = KeyDB2.getInstance().getKey(ops.getKeyID());
+        Key key = KeyDB2.getKey(ops.getKeyID());
         if (key == null) {
             log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(ops.getKeyID())));
             return;
@@ -131,10 +131,10 @@ class BcUtils {
     }
 
     static void log1(String msg) {
-        MyPGP.getInstance().log1(msg);
+        MyPGP.log1(msg);
     }
 
     static void log2(String msg) {
-        MyPGP.getInstance().log2(msg);
+        MyPGP.log2(msg);
     }
 }

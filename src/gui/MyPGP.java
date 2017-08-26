@@ -49,64 +49,39 @@ import java.util.prefs.Preferences;
 // 7.7.2012 KeyDB replaced for KeyDB2
 // 23.6.2013 force cursor to end of log area after writing
 // 21.8.2014 fully revised
+// 24.8.2017 remove singleton architecture
 
 /**
  * @author Jose A. Manas
  * @version 30.12.2016
  */
 public class MyPGP {
-    private static MyPGP instance;
-    private MyDirectoryChooser keyFileChooser;
-    private Directory directory;
-    private JButton processButton;
-    private JButton encryptButton;
-
-    public static MyPGP getInstance() {
-        if (instance == null)
-            instance = new MyPGP();
-        return instance;
-    }
+    private static MyDirectoryChooser keyFileChooser;
+    private static Directory directory;
+    private static JButton processButton;
+    private static JButton encryptButton;
 
     private static JFrame frame;
 
-    private DefaultMutableTreeNode secKeyBranch;
-    private DefaultMutableTreeNode listsBranch;
-    private DefaultMutableTreeNode directoryBranch;
+    private static DefaultMutableTreeNode secKeyBranch;
+    private static DefaultMutableTreeNode listsBranch;
+    private static DefaultMutableTreeNode directoryBranch;
 
-    private final JTextArea logArea;
-    private JTree keysTree;
+    private static JTextArea logArea;
+    private static JTree keysTree;
 
-    private MyFileChooser fch;
-    private JPanel keysPanel;
+    private static MyFileChooser fch;
+    private static JPanel keysPanel;
 
-    private NewDirectoryAction newDirectoryAction;
-    private RefreshAction refreshAction;
-    private SecureDeleteAction secureDeleteAction;
+    private static NewDirectoryAction newDirectoryAction;
+    private static RefreshAction refreshAction;
+    private static SecureDeleteAction secureDeleteAction;
 
-    private JPopupMenu popupKeyInRings;
-    private JPopupMenu popupKeyInList;
-    private JPopupMenu popupList;
+    private static JPopupMenu popupKeyInRings;
+    private static JPopupMenu popupKeyInList;
+    private static JPopupMenu popupList;
 
-    public static void start() {
-        Provider.set();
-        try {
-            frame = new JFrame(Version.VERSION);
-            frame.setIconImage(Icons.getPgpImage());
-            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-            getInstance().init();
-            frame.setJMenuBar(instance.getMenuBar());
-            frame.getContentPane().add(instance.getPanel());
-            frame.pack();
-            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
-
-            frame.setVisible(true);
-        } catch (Exception e) {
-            MyLogger.dump(e, Version.VERSION);
-        }
-    }
-
-    private MyPGP() {
+    static {
         logArea = new JTextArea(20, 80);
         logArea.setWrapStyleWord(true);
         logArea.setLineWrap(true);
@@ -116,7 +91,26 @@ public class MyPGP {
         log("");
     }
 
-    private void init() {
+    public static void start() {
+        Provider.set();
+        try {
+            frame = new JFrame(Version.VERSION);
+            frame.setIconImage(Icons.getPgpImage());
+            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+            init();
+            frame.setJMenuBar(getMenuBar());
+            frame.getContentPane().add(getPanel());
+            frame.pack();
+            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+
+            frame.setVisible(true);
+        } catch (Exception e) {
+            MyLogger.dump(e, Version.VERSION);
+        }
+    }
+
+    private static void init() {
         directory = Directory.load(Info.getHome());
         Info.loadInfo();
         log("");
@@ -127,7 +121,7 @@ public class MyPGP {
 //        expandAll(keysTree);
     }
 
-    private void reloadKeys() {
+    private static void reloadKeys() {
         boolean secKeysExpanded = keysTree.isExpanded(new TreePath(secKeyBranch.getPath()));
         boolean listsExpanded = keysTree.isExpanded(new TreePath(listsBranch.getPath()));
         boolean directoryExpanded = keysTree.isExpanded(new TreePath(directoryBranch.getPath()));
@@ -135,7 +129,8 @@ public class MyPGP {
         Set<Directory> expandedDirectories = new HashSet<>();
         readExpandedDirectories(expandedDirectories, directoryBranch);
 
-        KeyDB2.getInstance().reset();
+        KeyDB2.reset();
+        KeyListDB.clear();
         directory = Directory.load(Info.getHome());
         Info.loadInfo();
         log("");
@@ -159,13 +154,13 @@ public class MyPGP {
         keysPanel.revalidate();
 
         secKeyBranch.removeAllChildren();
-        for (Key key : KeyDB2.getInstance().getSecretKeys())
+        for (Key key : KeyDB2.getSecretKeys())
             secKeyBranch.add(mkTreeKey(key));
 
         keysPanel.revalidate();
     }
 
-    private void readExpandedDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
+    private static void readExpandedDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
         Object object = node.getUserObject();
         if (!(object instanceof Directory))
             return;
@@ -178,7 +173,7 @@ public class MyPGP {
         }
     }
 
-    private void expandDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
+    private static void expandDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
         Object object = node.getUserObject();
         if (!(object instanceof Directory))
             return;
@@ -192,7 +187,7 @@ public class MyPGP {
         }
     }
 
-    private void expandAll(JTree tree) {
+    private static void expandAll(JTree tree) {
         int row = 0;
         while (row < tree.getRowCount()) {
             tree.expandRow(row);
@@ -200,18 +195,16 @@ public class MyPGP {
         }
     }
 
-    private DefaultMutableTreeNode mkKeysTree(Directory directory) {
+    private static DefaultMutableTreeNode mkKeysTree(Directory directory) {
         DefaultMutableTreeNode keysTreeRoot = new DefaultMutableTreeNode(Text.get("keys"));
 
         secKeyBranch = new DefaultMutableTreeNode(Text.get("secret_keys"));
         keysTreeRoot.add(secKeyBranch);
-//        for (Key key : KeyDB2.getInstance().getSecretKeys())
-//            secKeyBranch.add(mkTreeKey(key));
         mkSecretTreeDirectory(secKeyBranch, directory);
 
         listsBranch = new DefaultMutableTreeNode(Text.get("lists"));
         keysTreeRoot.add(listsBranch);
-        for (KeyList list : KeyListDB.getInstance().getListSet())
+        for (KeyList list : KeyListDB.getListSet())
             listsBranch.add(mkTreeList(list));
 
         directoryBranch = mkTreeDirectory(directory);
@@ -220,14 +213,14 @@ public class MyPGP {
         return keysTreeRoot;
     }
 
-    private DefaultMutableTreeNode mkTreeList(KeyList list) {
+    private static DefaultMutableTreeNode mkTreeList(KeyList list) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(list);
         for (Key key : list.getMembers(true))
             node.add(mkTreeKey(key));
         return node;
     }
 
-    private void mkSecretTreeDirectory(
+    private static void mkSecretTreeDirectory(
             DefaultMutableTreeNode root, Directory directory) {
         for (Key key : directory.getKeys()) {
             if (key.isSecret())
@@ -240,7 +233,7 @@ public class MyPGP {
         }
     }
 
-    private DefaultMutableTreeNode mkSecretTreeDirectory(Directory directory) {
+    private static DefaultMutableTreeNode mkSecretTreeDirectory(Directory directory) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(directory);
         for (Key key : directory.getKeys()) {
             if (key.isSecret())
@@ -254,7 +247,7 @@ public class MyPGP {
         return node;
     }
 
-    private DefaultMutableTreeNode mkTreeDirectory(Directory directory) {
+    private static DefaultMutableTreeNode mkTreeDirectory(Directory directory) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(directory);
         for (Key key : directory.getKeys())
             node.add(mkTreeKey(key));
@@ -263,7 +256,7 @@ public class MyPGP {
         return node;
     }
 
-    private DefaultMutableTreeNode mkTreeKey(Key key) {
+    private static DefaultMutableTreeNode mkTreeKey(Key key) {
         return mkTreeKey(key, new HashSet<Long>());
     }
 
@@ -275,7 +268,7 @@ public class MyPGP {
      * @param hierarchy keys already in the chain to avoid endless loops of mutual certifications.
      * @return tree structure for this key, and signing keys.
      */
-    private DefaultMutableTreeNode mkTreeKey(Key key, Set<Long> hierarchy) {
+    private static DefaultMutableTreeNode mkTreeKey(Key key, Set<Long> hierarchy) {
         DefaultMutableTreeNode keyNode = new DefaultMutableTreeNode(key);
         keyNode.add(new DefaultMutableTreeNode(key.getCorePresentation()));
         DefaultMutableTreeNode detailNode = new DefaultMutableTreeNode(key.getIdFingerprint());
@@ -300,7 +293,7 @@ public class MyPGP {
             DefaultMutableTreeNode signers = new DefaultMutableTreeNode(Text.get("signers") + " ...");
             keyNode.add(signers);
             for (Long sid : signerList) {
-                Key signerKey = KeyDB2.getInstance().getKey(sid);
+                Key signerKey = KeyDB2.getKey(sid);
                 if (signerKey == null)
                     signers.add(new DefaultMutableTreeNode(String.format("[%s]", Key.mkId8(sid))));
                 else if (hierarchy.contains(sid))
@@ -312,7 +305,7 @@ public class MyPGP {
         return keyNode;
     }
 
-    private DefaultMutableTreeNode mkEncryptionAlgorithms(PGPPublicKey publicKey) {
+    private static DefaultMutableTreeNode mkEncryptionAlgorithms(PGPPublicKey publicKey) {
         // encryption algorithms
         int[] algos = AlgorithmSelection.getPreferredEncryptionAlgos(publicKey);
         if (algos == null || algos.length <= 0)
@@ -328,7 +321,7 @@ public class MyPGP {
         return new DefaultMutableTreeNode(sb.toString());
     }
 
-    private int getBits(PGPPublicKey publicKey) {
+    private static int getBits(PGPPublicKey publicKey) {
         int bitStrength = publicKey.getBitStrength();
         if (bitStrength > 0)
             return bitStrength;
@@ -343,7 +336,7 @@ public class MyPGP {
         return 0;
     }
 
-    private X9ECParameters getECParameters(BCPGKey key) {
+    private static X9ECParameters getECParameters(BCPGKey key) {
         ASN1ObjectIdentifier curveOID = null;
         if (key instanceof ECDSAPublicBCPGKey) {
             ECDSAPublicBCPGKey ecKey = (ECDSAPublicBCPGKey) key;
@@ -368,7 +361,7 @@ public class MyPGP {
         return null;
     }
 
-    public Component getPanel() {
+    public static Component getPanel() {
         Preferences preferences = Preferences.userRoot().node("mypgp");
 
         fch = new MyFileChooser();
@@ -457,7 +450,7 @@ public class MyPGP {
         return panel;
     }
 
-    private void processSelection(File[] files) {
+    private static void processSelection(File[] files) {
         Map<Long, char[]> passwords = new HashMap<>();
         try {
             for (File blackFile : files) {
@@ -478,7 +471,7 @@ public class MyPGP {
         }
     }
 
-    private void encryptSelection(File[] files) {
+    private static void encryptSelection(File[] files) {
         log("");
         List<Key> encryptingKeys = getEncryptingKeys();
         if (encryptingKeys.size() == 0) {
@@ -503,7 +496,7 @@ public class MyPGP {
         }
     }
 
-    private JMenuBar getMenuBar() {
+    private static JMenuBar getMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         JMenu keyMenu = new JMenu(Text.get("keys"));
         menuBar.add(keyMenu);
@@ -561,7 +554,7 @@ public class MyPGP {
         return menuBar;
     }
 
-    private List<Key> getSecretKeys() {
+    private static List<Key> getSecretKeys() {
         List<Key> keys = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
@@ -578,7 +571,7 @@ public class MyPGP {
         return keys;
     }
 
-    private List<Key> getSigningKeys() {
+    private static List<Key> getSigningKeys() {
         List<Key> keys = new ArrayList<>();
         for (Key key : getSecretKeys()) {
             if (key.getSigningKey() != null)
@@ -590,7 +583,7 @@ public class MyPGP {
         return keys;
     }
 
-    private List<Key> getPublicKeys() {
+    private static List<Key> getPublicKeys() {
         List<Key> keys = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
@@ -605,8 +598,7 @@ public class MyPGP {
                 keys.add((Key) object);
             } else if (object.getClass() == KeyList.class) {
                 KeyList list = (KeyList) object;
-                for (Key key : list.getMembers(false))
-                    keys.add(key);
+                keys.addAll(list.getMembers(false));
 
             } else if (object.getClass() == Directory.class) {
                 Directory directory = (Directory) object;
@@ -617,7 +609,7 @@ public class MyPGP {
         return keys;
     }
 
-    private List<Key> getEncryptingKeys() {
+    private static List<Key> getEncryptingKeys() {
         List<Key> keys = new ArrayList<>();
         for (Key key : getPublicKeys()) {
             if (key.getEncryptingKey() != null)
@@ -629,7 +621,7 @@ public class MyPGP {
         return keys;
     }
 
-    private List<DefaultMutableTreeNode> getLists() {
+    private static List<DefaultMutableTreeNode> getLists() {
         List<DefaultMutableTreeNode> lists = new ArrayList<>();
         TreePath[] paths = keysTree.getSelectionPaths();
         if (paths == null || paths.length == 0)
@@ -644,16 +636,16 @@ public class MyPGP {
         return lists;
     }
 
-    public void log1(String msg) {
+    public static void log1(String msg) {
         log("");
         log(msg);
     }
 
-    public void log2(String msg) {
+    public static void log2(String msg) {
         log("  " + msg);
     }
 
-    public void log(String line) {
+    public static void log(String line) {
         if (line == null)
             return;
         if (line.length() > 0)
@@ -662,17 +654,17 @@ public class MyPGP {
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
-    Window getWindow() {
+    static Window getWindow() {
         return frame;
     }
 
-    public void ignore(String absolutePath) {
+    public static void ignore(String absolutePath) {
         if (absolutePath.toLowerCase().endsWith(".jar"))
             return;
-        getInstance().log(Text.get("skip") + " " + absolutePath);
+        log(Text.get("skip") + " " + absolutePath);
     }
 
-    private class EncryptAction
+    private static class EncryptAction
             extends AbstractAction {
         private EncryptAction() {
             super(Text.get("encrypt"));
@@ -689,7 +681,7 @@ public class MyPGP {
         }
     }
 
-    private class SignAction
+    private static class SignAction
             extends AbstractAction {
         private SignAction() {
             super(Text.get("sign"));
@@ -738,7 +730,7 @@ public class MyPGP {
         }
     }
 
-    private class EncryptSignAction
+    private static class EncryptSignAction
             extends AbstractAction {
         private EncryptSignAction() {
             super(Text.get("encrypt_sign"));
@@ -793,7 +785,7 @@ public class MyPGP {
         }
     }
 
-    private class DecryptAction
+    private static class DecryptAction
             extends AbstractAction {
         private DecryptAction() {
             super(Text.get("decrypt_verify"));
@@ -833,7 +825,7 @@ public class MyPGP {
         }
     }
 
-    private class EncryptClipAction
+    private static class EncryptClipAction
             extends AbstractAction {
         private EncryptClipAction() {
             super(Text.get("encrypt"));
@@ -861,7 +853,7 @@ public class MyPGP {
         }
     }
 
-    private class SignClipAction
+    private static class SignClipAction
             extends AbstractAction {
         private SignClipAction() {
             super(Text.get("sign"));
@@ -891,7 +883,7 @@ public class MyPGP {
         }
     }
 
-    private class EncryptSignClipAction
+    private static class EncryptSignClipAction
             extends AbstractAction {
         private EncryptSignClipAction() {
             super(Text.get("encrypt_sign"));
@@ -929,7 +921,7 @@ public class MyPGP {
         }
     }
 
-    private class DecryptClipAction
+    private static class DecryptClipAction
             extends AbstractAction {
         private DecryptClipAction() {
             super(Text.get("decrypt_verify"));
@@ -952,7 +944,7 @@ public class MyPGP {
         }
     }
 
-    private class SecureDeleteAction
+    private static class SecureDeleteAction
             extends AbstractAction {
         private SecureDeleteAction() {
             super(Text.get("delete"));
@@ -979,7 +971,7 @@ public class MyPGP {
                     if (result != JOptionPane.OK_OPTION)
                         return;
                     log(Text.get("delete") + ": " + file.getName());
-                    SecureDeleter.delete(MyPGP.this, file);
+                    SecureDeleter.delete(file);
                 } catch (Exception e) {
                     MyLogger.dump(e, Text.get("delete"));
                 }
@@ -988,7 +980,7 @@ public class MyPGP {
         }
     }
 
-    void fileDeleted(SecureDeleteWorker worker) {
+    static void fileDeleted(SecureDeleteWorker worker) {
         try {
             fch.rescanCurrentDirectory();
             Exception executonException = worker.getExecutonException();
@@ -999,7 +991,7 @@ public class MyPGP {
         }
     }
 
-    private class NewDirectoryAction
+    private static class NewDirectoryAction
             extends AbstractAction {
 
         private NewDirectoryAction() {
@@ -1032,7 +1024,7 @@ public class MyPGP {
         }
     }
 
-    private class RefreshAction
+    private static class RefreshAction
             extends AbstractAction {
         private RefreshAction() {
             super(Text.get("refresh"));
@@ -1043,7 +1035,7 @@ public class MyPGP {
         }
     }
 
-    private class GenerateKeyAction
+    private static class GenerateKeyAction
             extends AbstractAction {
         private GenerateKeyAction() {
             super(Text.get("generate"));
@@ -1093,12 +1085,12 @@ public class MyPGP {
                     panel.getName(), panel.getEmail(), panel.getComment(),
                     panel.getExpireDate(),
                     panel.getPassword());
-            KeyGeneratingWorker worker = new KeyGeneratingWorker(MyPGP.this, task);
+            KeyGeneratingWorker worker = new KeyGeneratingWorker(task);
             worker.execute();
         }
     }
 
-    void keyGenerated(KeyGeneratingThread task) {
+    static void keyGenerated(KeyGeneratingThread task) {
         try {
             long delta = task.getDelta();
             log2(String.format("%dm %ds", delta / 60, delta % 60));
@@ -1119,7 +1111,7 @@ public class MyPGP {
         }
     }
 
-    private class AliasKeyAction
+    private static class AliasKeyAction
             extends AbstractAction {
         private AliasKeyAction() {
             super(Text.get("alias"));
@@ -1151,11 +1143,11 @@ public class MyPGP {
                     Icons.getPgpIcon());
             if (result != JOptionPane.OK_OPTION)
                 return;
-            KeyDB2.getInstance().setAlias(key.getKid(), aliasLabel.getText());
+            KeyDB2.setAlias(key.getKid(), aliasLabel.getText());
         }
     }
 
-    private class CopyKeyAction
+    private static class CopyKeyAction
             extends AbstractAction {
         private CopyKeyAction() {
             super(Text.get("copy"));
@@ -1184,7 +1176,7 @@ public class MyPGP {
         }
     }
 
-    private class ExportKeyAction
+    private static class ExportKeyAction
             extends AbstractAction {
         private ExportKeyAction() {
             super(Text.get("export"));
@@ -1232,7 +1224,7 @@ public class MyPGP {
         }
     }
 
-    private class ReloadKeysAction
+    private static class ReloadKeysAction
             extends AbstractAction {
         private ReloadKeysAction() {
             super(Text.get("refresh"));
@@ -1243,7 +1235,7 @@ public class MyPGP {
         }
     }
 
-    private class FileMapAction
+    private static class FileMapAction
             extends AbstractAction {
         private FileMapAction() {
             super(String.format("%s & %s", Text.get("files"), Text.get("keys")));
@@ -1256,7 +1248,7 @@ public class MyPGP {
         }
     }
 
-    private class AddKeyListAction
+    private static class AddKeyListAction
             extends AbstractAction {
         private AddKeyListAction() {
             super(Text.get("add_key_list"));
@@ -1285,7 +1277,7 @@ public class MyPGP {
         }
     }
 
-    private class RemoveKeyListAction
+    private static class RemoveKeyListAction
             extends AbstractAction {
         private RemoveKeyListAction() {
             super(Text.get("remove_key_list"));
@@ -1318,7 +1310,7 @@ public class MyPGP {
         }
     }
 
-    private class NewListAction
+    private static class NewListAction
             extends AbstractAction {
         private NewListAction() {
             super(Text.get("new_list"));
@@ -1337,16 +1329,16 @@ public class MyPGP {
             String listname = textField.getText();
             if (listname == null || listname.length() == 0)
                 return;
-            if (KeyListDB.getInstance().get(listname) != null)
+            if (KeyListDB.get(listname) != null)
                 return;
             KeyList list = new KeyList(listname);
-            KeyListDB.getInstance().add(list);
+            KeyListDB.add(list);
             Info.saveInfo();
             reloadKeys();
         }
     }
 
-    private class RemoveListAction
+    private static class RemoveListAction
             extends AbstractAction {
         private RemoveListAction() {
             super(Text.get("remove_list"));
@@ -1369,14 +1361,14 @@ public class MyPGP {
                         Icons.getPgpIcon());
                 if (result != JOptionPane.OK_OPTION)
                     return;
-                KeyListDB.getInstance().removeList(list);
+                KeyListDB.removeList(list);
             }
             Info.saveInfo();
             reloadKeys();
         }
     }
 
-    private File getDirectory(MyFileChooser fch)
+    private static File getDirectory(MyFileChooser fch)
             throws FileNotFoundException {
         File directory = fch.getSelectedFile();
         if (directory == null || !directory.isDirectory())
@@ -1388,17 +1380,17 @@ public class MyPGP {
         return directory.getParentFile();
     }
 
-    private void log(String format, String text) {
+    private static void log(String format, String text) {
         logArea.append(String.format(format, text));
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
-    private void log(String format, String text, int number) {
+    private static void log(String format, String text, int number) {
         logArea.append(String.format(format, text, number));
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
-    private boolean keyInSecretList(TreePath path) {
+    private static boolean keyInSecretList(TreePath path) {
         DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
         Object x = last.getUserObject();
         if (x.getClass() != Key.class)
@@ -1407,19 +1399,19 @@ public class MyPGP {
         return node == secKeyBranch;
     }
 
-    private boolean isKey(TreePath path) {
+    private static boolean isKey(TreePath path) {
         DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
         Object x = last.getUserObject();
         return x.getClass() == Key.class;
     }
 
-    private boolean isList(TreePath path) {
+    private static boolean isList(TreePath path) {
         DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
         Object x = last.getUserObject();
         return x.getClass() == KeyList.class;
     }
 
-    private boolean keyInList(TreePath path) {
+    private static boolean keyInList(TreePath path) {
         DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
         Object x = last.getUserObject();
         if (x.getClass() != Key.class)
@@ -1428,7 +1420,7 @@ public class MyPGP {
         return node.getUserObject().getClass() == KeyList.class;
     }
 
-    private void doKeyInSecretList(int x, int y) {
+    private static void doKeyInSecretList(int x, int y) {
         if (popupKeyInRings == null) {
             popupKeyInRings = new JPopupMenu();
             popupKeyInRings.add(new AliasKeyAction());
@@ -1438,7 +1430,7 @@ public class MyPGP {
         popupKeyInRings.show(keysTree, x, y);
     }
 
-    private void doKeyInPublicList(int x, int y) {
+    private static void doKeyInPublicList(int x, int y) {
         if (popupKeyInRings == null) {
             popupKeyInRings = new JPopupMenu();
             popupKeyInRings.add(new AliasKeyAction());
@@ -1448,7 +1440,7 @@ public class MyPGP {
         popupKeyInRings.show(keysTree, x, y);
     }
 
-    private void doList(int x, int y) {
+    private static void doList(int x, int y) {
         if (popupList == null) {
             popupList = new JPopupMenu();
             popupList.add(new RemoveKeyListAction());
@@ -1458,7 +1450,7 @@ public class MyPGP {
         popupList.show(keysTree, x, y);
     }
 
-    private void doKeyInList(int x, int y) {
+    private static void doKeyInList(int x, int y) {
         if (popupKeyInList == null) {
             popupKeyInList = new JPopupMenu();
             popupKeyInList.add(new AliasKeyAction());
@@ -1469,7 +1461,7 @@ public class MyPGP {
         popupKeyInList.show(keysTree, x, y);
     }
 
-    private class MyMouseListener
+    private static class MyMouseListener
             extends MouseAdapter {
         @Override
         public void mousePressed(MouseEvent me) {

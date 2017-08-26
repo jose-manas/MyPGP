@@ -19,7 +19,7 @@ public class KeyList
     private int uid;
     private String name;
     //    private Collection<Key> members = new TreeSet<Key>(Key.KEY_COMPARATOR);
-    private Collection<Key> members = new HashSet<Key>();
+    private Collection<Key> members = new HashSet<>();
 
     public KeyList(int uid, String name) {
         this.uid = uid;
@@ -45,7 +45,7 @@ public class KeyList
         if (!sort)
             return members;
 
-        Set<Key> sorted = new TreeSet<Key>(new Comparator<Key>() {
+        Set<Key> sorted = new TreeSet<>(new Comparator<Key>() {
             Collator collator = Collator.getInstance(Text.getLocale());
 
             public int compare(Key key1, Key key2) {
@@ -94,14 +94,8 @@ public class KeyList
         }
     }
 
-    private void setMember(Long kid) {
-        Key key = KeyDB2.getInstance().getKey(kid);
-        if (key != null)
-            members.add(key);
-    }
-
     private void setMember(String kid) {
-        Key key = KeyDB2.getInstance().getKey(kid);
+        Key key = KeyDB2.getKey(kid);
         if (key != null)
             members.add(key);
     }
@@ -116,7 +110,7 @@ public class KeyList
         writer.println();
     }
 
-    public int getUid() {
+    int getUid() {
         return uid;
     }
 }
