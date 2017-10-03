@@ -26,8 +26,6 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
@@ -65,7 +63,7 @@ public class MyPGP {
 
     private static DefaultMutableTreeNode secKeyBranch;
     private static DefaultMutableTreeNode listsBranch;
-    private static DefaultMutableTreeNode directoryBranch;
+    private static DefaultMutableTreeNode pubKeyBranch;
 
     private static JTextArea logArea;
     private static JTree keysTree;
@@ -77,9 +75,7 @@ public class MyPGP {
     private static RefreshAction refreshAction;
     private static SecureDeleteAction secureDeleteAction;
 
-    private static JPopupMenu popupKeyInRings;
-    private static JPopupMenu popupKeyInList;
-    private static JPopupMenu popupList;
+    private static Set<Object> selection = new HashSet<>();
 
     static {
         logArea = new JTextArea(20, 80);
@@ -116,18 +112,19 @@ public class MyPGP {
         log("");
 
         keysTree = new JTree(mkKeysTree(directory));
-        keysTree.setCellRenderer(new MyTreeRenderer());
-        keysTree.addMouseListener(new MyMouseListener());
+        keysTree.setCellRenderer(new MyTreeRenderer(selection));
+        keysTree.addMouseListener(new MyMouseListener(keysTree, selection));
 //        expandAll(keysTree);
     }
 
     private static void reloadKeys() {
+        selection.clear();
         boolean secKeysExpanded = keysTree.isExpanded(new TreePath(secKeyBranch.getPath()));
         boolean listsExpanded = keysTree.isExpanded(new TreePath(listsBranch.getPath()));
-        boolean directoryExpanded = keysTree.isExpanded(new TreePath(directoryBranch.getPath()));
+        boolean directoryExpanded = keysTree.isExpanded(new TreePath(pubKeyBranch.getPath()));
 
-        Set<Directory> expandedDirectories = new HashSet<>();
-        readExpandedDirectories(expandedDirectories, directoryBranch);
+        Set<Directory> expandedSecretKeys = getExpandedDirectories(secKeyBranch);
+        Set<Directory> expandedPublicKeys = getExpandedDirectories(pubKeyBranch);
 
         KeyDB2.reset();
         KeyListDB.clear();
@@ -136,8 +133,8 @@ public class MyPGP {
         log("");
 
         keysTree = new JTree(mkKeysTree(directory));
-        keysTree.setCellRenderer(new MyTreeRenderer());
-        keysTree.addMouseListener(new MyMouseListener());
+        keysTree.setCellRenderer(new MyTreeRenderer(selection));
+        keysTree.addMouseListener(new MyMouseListener(keysTree, selection));
 //            expandAll(keysTree);
         for (Component component : keysPanel.getComponents()) {
             if (component instanceof JScrollPane)
@@ -149,15 +146,22 @@ public class MyPGP {
         if (listsExpanded)
             keysTree.expandPath(new TreePath(listsBranch.getPath()));
         if (directoryExpanded)
-            keysTree.expandPath(new TreePath(directoryBranch.getPath()));
-        expandDirectories(expandedDirectories, directoryBranch);
-        keysPanel.revalidate();
+            keysTree.expandPath(new TreePath(pubKeyBranch.getPath()));
 
-        secKeyBranch.removeAllChildren();
-        for (Key key : KeyDB2.getSecretKeys())
-            secKeyBranch.add(mkTreeKey(key));
+        expandKeyDirectories(expandedSecretKeys, secKeyBranch);
+        expandKeyDirectories(expandedPublicKeys, pubKeyBranch);
 
         keysPanel.revalidate();
+    }
+
+    private static Set<Directory> getExpandedDirectories(DefaultMutableTreeNode branch) {
+        Set<Directory> directorySet = new HashSet<>();
+        int nChild = branch.getChildCount();
+        for (int ch = 0; ch < nChild; ch++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) branch.getChildAt(ch);
+            readExpandedDirectories(directorySet, child);
+        }
+        return directorySet;
     }
 
     private static void readExpandedDirectories(Set<Directory> directories, DefaultMutableTreeNode node) {
@@ -170,6 +174,14 @@ public class MyPGP {
                 DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
                 readExpandedDirectories(directories, child);
             }
+        }
+    }
+
+    private static void expandKeyDirectories(Set<Directory> expandedKeys, DefaultMutableTreeNode branch) {
+        int nChild = branch.getChildCount();
+        for (int ch = 0; ch < nChild; ch++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) branch.getChildAt(ch);
+            expandDirectories(expandedKeys, child);
         }
     }
 
@@ -200,15 +212,16 @@ public class MyPGP {
 
         secKeyBranch = new DefaultMutableTreeNode(Text.get("secret_keys"));
         keysTreeRoot.add(secKeyBranch);
-        mkSecretTreeDirectory(secKeyBranch, directory);
+        mkKeyTree(secKeyBranch, directory, false);
 
         listsBranch = new DefaultMutableTreeNode(Text.get("lists"));
         keysTreeRoot.add(listsBranch);
         for (KeyList list : KeyListDB.getListSet())
             listsBranch.add(mkTreeList(list));
 
-        directoryBranch = mkTreeDirectory(directory);
-        keysTreeRoot.add(directoryBranch);
+        pubKeyBranch = new DefaultMutableTreeNode(directory.toString());
+        keysTreeRoot.add(pubKeyBranch);
+        mkKeyTree(pubKeyBranch, directory, true);
 
         return keysTreeRoot;
     }
@@ -220,39 +233,31 @@ public class MyPGP {
         return node;
     }
 
-    private static void mkSecretTreeDirectory(
-            DefaultMutableTreeNode root, Directory directory) {
+    private static void mkKeyTree(
+            DefaultMutableTreeNode root, Directory directory, boolean pub) {
         for (Key key : directory.getKeys()) {
-            if (key.isSecret())
+            if (pub || key.isSecret())
                 root.add(mkTreeKey(key));
         }
         for (Directory sub : directory.getSubdirs()) {
-            DefaultMutableTreeNode newChild = mkSecretTreeDirectory(sub);
+            DefaultMutableTreeNode newChild = mkKeyTree(sub, pub);
             if (newChild.getChildCount() > 0)
                 root.add(newChild);
         }
     }
 
-    private static DefaultMutableTreeNode mkSecretTreeDirectory(Directory directory) {
+    private static DefaultMutableTreeNode mkKeyTree(
+            Directory directory, boolean pub) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(directory);
         for (Key key : directory.getKeys()) {
-            if (key.isSecret())
+            if (pub | key.isSecret())
                 node.add(mkTreeKey(key));
         }
         for (Directory sub : directory.getSubdirs()) {
-            DefaultMutableTreeNode newChild = mkSecretTreeDirectory(sub);
+            DefaultMutableTreeNode newChild = mkKeyTree(sub, pub);
             if (newChild.getChildCount() > 0)
                 node.add(newChild);
         }
-        return node;
-    }
-
-    private static DefaultMutableTreeNode mkTreeDirectory(Directory directory) {
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(directory);
-        for (Key key : directory.getKeys())
-            node.add(mkTreeKey(key));
-        for (Directory sub : directory.getSubdirs())
-            node.add(mkTreeDirectory(sub));
         return node;
     }
 
@@ -501,18 +506,18 @@ public class MyPGP {
         JMenu keyMenu = new JMenu(Text.get("keys"));
         menuBar.add(keyMenu);
         keyMenu.add(new GenerateKeyAction());
-        keyMenu.add(new AliasKeyAction());
-        keyMenu.add(new CopyKeyAction());
-        keyMenu.add(new ExportKeyAction());
+        keyMenu.add(new AliasKeyAction(true));
+        keyMenu.add(new CopyKeyAction(true));
+        keyMenu.add(new ExportKeyAction(true));
         keyMenu.add(new ReloadKeysAction());
         keyMenu.add(new FileMapAction());
 
         JMenu listsMenu = new JMenu(Text.get("lists"));
         menuBar.add(listsMenu);
-        listsMenu.add(new AddKeyListAction());
-        listsMenu.add(new RemoveKeyListAction());
+        listsMenu.add(new AddKeyListAction(true));
+        listsMenu.add(new RemoveKeyListAction(true));
         listsMenu.add(new NewListAction());
-        listsMenu.add(new RemoveListAction());
+        listsMenu.add(new RemoveListAction(true));
 
         JMenu clipMenu = new JMenu(Text.get("clipboard"));
         menuBar.add(clipMenu);
@@ -554,10 +559,10 @@ public class MyPGP {
         return menuBar;
     }
 
-    private static List<Key> getSecretKeys() {
+    private static List<Key> getSecretKeys(boolean checked) {
         List<Key> keys = new ArrayList<>();
-        TreePath[] paths = keysTree.getSelectionPaths();
-        if (paths == null || paths.length == 0)
+        Collection<TreePath> paths = getSelectionPaths(checked);
+        if (paths == null || paths.isEmpty())
             return keys;
 
         for (TreePath path : paths) {
@@ -571,9 +576,24 @@ public class MyPGP {
         return keys;
     }
 
+    private static Collection<TreePath> getSelectionPaths(boolean checked) {
+        if (!checked)
+            return Arrays.asList(keysTree.getSelectionPaths());
+
+        Collection<TreePath> all = new HashSet<>();
+        for (Object x : selection) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) x;
+            if (selection.contains(node)) {
+                TreePath path = new TreePath(node.getPath());
+                all.add(path);
+            }
+        }
+        return all;
+    }
+
     private static List<Key> getSigningKeys() {
         List<Key> keys = new ArrayList<>();
-        for (Key key : getSecretKeys()) {
+        for (Key key : getSecretKeys(true)) {
             if (key.getSigningKey() != null)
                 keys.add(key);
         }
@@ -583,10 +603,10 @@ public class MyPGP {
         return keys;
     }
 
-    private static List<Key> getPublicKeys() {
+    private static List<Key> getPublicKeys(boolean checked) {
         List<Key> keys = new ArrayList<>();
-        TreePath[] paths = keysTree.getSelectionPaths();
-        if (paths == null || paths.length == 0)
+        Collection<TreePath> paths = getSelectionPaths(checked);
+        if (paths == null || paths.isEmpty())
             return keys;
 
         for (TreePath path : paths) {
@@ -609,9 +629,27 @@ public class MyPGP {
         return keys;
     }
 
+    private static List<KeyList> getKeyLists(boolean checked) {
+        List<KeyList> keyLists = new ArrayList<>();
+        Collection<TreePath> paths = getSelectionPaths(checked);
+        if (paths == null || paths.isEmpty())
+            return keyLists;
+
+        for (TreePath path : paths) {
+            try {
+                if (path.getPathComponent(1) != listsBranch)
+                    continue;
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                keyLists.add((KeyList) node.getUserObject());
+            } catch (Exception ignored) {
+            }
+        }
+        return keyLists;
+    }
+
     private static List<Key> getEncryptingKeys() {
         List<Key> keys = new ArrayList<>();
-        for (Key key : getPublicKeys()) {
+        for (Key key : getPublicKeys(true)) {
             if (key.getEncryptingKey() != null)
                 keys.add(key);
         }
@@ -621,10 +659,10 @@ public class MyPGP {
         return keys;
     }
 
-    private static List<DefaultMutableTreeNode> getLists() {
+    private static List<DefaultMutableTreeNode> getLists(boolean checked) {
         List<DefaultMutableTreeNode> lists = new ArrayList<>();
-        TreePath[] paths = keysTree.getSelectionPaths();
-        if (paths == null || paths.length == 0)
+        Collection<TreePath> paths = getSelectionPaths(checked);
+        if (paths == null || paths.isEmpty())
             return lists;
 
         for (TreePath path : paths) {
@@ -662,6 +700,10 @@ public class MyPGP {
         if (absolutePath.toLowerCase().endsWith(".jar"))
             return;
         log(Text.get("skip") + " " + absolutePath);
+    }
+
+    static DefaultMutableTreeNode getSecKeyBranch() {
+        return secKeyBranch;
     }
 
     private static class EncryptAction
@@ -1080,8 +1122,7 @@ public class MyPGP {
 
             KeyGeneratingThread task = new KeyGeneratingThread(
                     where,
-                    panel.getSignAlgo(), panel.getSignSize(),
-                    panel.getEncryptAlgo(), panel.getEncryptSize(),
+                    panel.getSignAlgo(), panel.getEncryptAlgo(),
                     panel.getName(), panel.getEmail(), panel.getComment(),
                     panel.getExpireDate(),
                     panel.getPassword());
@@ -1111,15 +1152,18 @@ public class MyPGP {
         }
     }
 
-    private static class AliasKeyAction
+    static class AliasKeyAction
             extends AbstractAction {
-        private AliasKeyAction() {
+        private final boolean checked;
+
+        AliasKeyAction(boolean checked) {
             super(Text.get("alias"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
-            List<Key> secretKeys = getSecretKeys();
-            List<Key> publicKeys = getPublicKeys();
+            List<Key> secretKeys = getSecretKeys(checked);
+            List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
                 log("%s: 0%n", Text.get("public_keys"));
                 log("%s: 0%n", Text.get("secret_keys"));
@@ -1147,15 +1191,18 @@ public class MyPGP {
         }
     }
 
-    private static class CopyKeyAction
+    static class CopyKeyAction
             extends AbstractAction {
-        private CopyKeyAction() {
+        private final boolean checked;
+
+        CopyKeyAction(boolean checked) {
             super(Text.get("copy"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
-            List<Key> secretKeys = getSecretKeys();
-            List<Key> publicKeys = getPublicKeys();
+            List<Key> secretKeys = getSecretKeys(checked);
+            List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
                 log("%s: 0%n", Text.get("public_keys"));
                 log("%s: 0%n", Text.get("secret_keys"));
@@ -1176,16 +1223,19 @@ public class MyPGP {
         }
     }
 
-    private static class ExportKeyAction
+    static class ExportKeyAction
             extends AbstractAction {
-        private ExportKeyAction() {
+        private final boolean checked;
+
+        ExportKeyAction(boolean checked) {
             super(Text.get("export"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
             log1(Text.get("export"));
-            List<Key> secretKeys = getSecretKeys();
-            List<Key> publicKeys = getPublicKeys();
+            List<Key> secretKeys = getSecretKeys(checked);
+            List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
                 log("%s: 0%n", Text.get("public_keys"));
                 log("%s: 0%n", Text.get("secret_keys"));
@@ -1250,18 +1300,21 @@ public class MyPGP {
 
     private static class AddKeyListAction
             extends AbstractAction {
-        private AddKeyListAction() {
+        private final boolean checked;
+
+        private AddKeyListAction(boolean checked) {
             super(Text.get("add_key_list"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
-            List<Key> publicKeys = getPublicKeys();
+            List<Key> publicKeys = getPublicKeys(checked);
             if (publicKeys.size() == 0) {
                 log("%s: 0%n", Text.get("public_keys"));
                 return;
             }
 
-            List<DefaultMutableTreeNode> listNodes = getLists();
+            List<DefaultMutableTreeNode> listNodes = getLists(checked);
             if (listNodes.size() == 0) {
                 log("%s: 0%n", Text.get("lists"));
                 return;
@@ -1277,16 +1330,44 @@ public class MyPGP {
         }
     }
 
-    private static class RemoveKeyListAction
+    static class RemoveKeyListAction
             extends AbstractAction {
-        private RemoveKeyListAction() {
+        private final boolean checked;
+
+        RemoveKeyListAction(boolean checked) {
             super(Text.get("remove_key_list"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
-            TreePath[] paths = keysTree.getSelectionPaths();
-            if (paths == null || paths.length == 0)
+            Collection<TreePath> paths = getSelectionPaths(checked);
+            if (paths == null || paths.isEmpty())
                 return;
+
+            if (checked) {
+                List<Key> secretKeys = getSecretKeys(true);
+                List<Key> publicKeys = getPublicKeys(true);
+                List<KeyList> keyLists = getKeyLists(true);
+                for (KeyList keyList : keyLists) {
+                    for (Key key : secretKeys)
+                        keyList.remove(key);
+                    for (Key key : publicKeys)
+                        keyList.remove(key);
+                }
+
+            } else {
+                for (TreePath path : paths) {
+                    try {
+                        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                        Key key = (Key) node.getUserObject();
+                        KeyList keyList = null;
+                        for (DefaultMutableTreeNode n = node; n != null; n = (DefaultMutableTreeNode) n.getParent())
+                            keyList = (KeyList) n.getUserObject();
+                        keyList.remove(key);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
 
             for (int i = 0; i < listsBranch.getChildCount(); i++) {
                 DefaultMutableTreeNode listNode = (DefaultMutableTreeNode) listsBranch.getChildAt(i);
@@ -1310,9 +1391,9 @@ public class MyPGP {
         }
     }
 
-    private static class NewListAction
+    static class NewListAction
             extends AbstractAction {
-        private NewListAction() {
+        NewListAction() {
             super(Text.get("new_list"));
         }
 
@@ -1338,14 +1419,17 @@ public class MyPGP {
         }
     }
 
-    private static class RemoveListAction
+    static class RemoveListAction
             extends AbstractAction {
-        private RemoveListAction() {
+        private final boolean checked;
+
+        RemoveListAction(boolean checked) {
             super(Text.get("remove_list"));
+            this.checked = checked;
         }
 
         public void actionPerformed(ActionEvent event) {
-            List<DefaultMutableTreeNode> listNodes = getLists();
+            List<DefaultMutableTreeNode> listNodes = getLists(checked);
             if (listNodes.size() == 0) {
                 log("%s: 0%n", Text.get("lists"));
                 return;
@@ -1388,102 +1472,5 @@ public class MyPGP {
     private static void log(String format, String text, int number) {
         logArea.append(String.format(format, text, number));
         logArea.setCaretPosition(logArea.getDocument().getLength());
-    }
-
-    private static boolean keyInSecretList(TreePath path) {
-        DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
-        Object x = last.getUserObject();
-        if (x.getClass() != Key.class)
-            return false;
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getPathComponent(path.getPathCount() - 2);
-        return node == secKeyBranch;
-    }
-
-    private static boolean isKey(TreePath path) {
-        DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
-        Object x = last.getUserObject();
-        return x.getClass() == Key.class;
-    }
-
-    private static boolean isList(TreePath path) {
-        DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
-        Object x = last.getUserObject();
-        return x.getClass() == KeyList.class;
-    }
-
-    private static boolean keyInList(TreePath path) {
-        DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
-        Object x = last.getUserObject();
-        if (x.getClass() != Key.class)
-            return false;
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getPathComponent(path.getPathCount() - 2);
-        return node.getUserObject().getClass() == KeyList.class;
-    }
-
-    private static void doKeyInSecretList(int x, int y) {
-        if (popupKeyInRings == null) {
-            popupKeyInRings = new JPopupMenu();
-            popupKeyInRings.add(new AliasKeyAction());
-            popupKeyInRings.add(new CopyKeyAction());
-            popupKeyInRings.add(new ExportKeyAction());
-        }
-        popupKeyInRings.show(keysTree, x, y);
-    }
-
-    private static void doKeyInPublicList(int x, int y) {
-        if (popupKeyInRings == null) {
-            popupKeyInRings = new JPopupMenu();
-            popupKeyInRings.add(new AliasKeyAction());
-            popupKeyInRings.add(new CopyKeyAction());
-            popupKeyInRings.add(new ExportKeyAction());
-        }
-        popupKeyInRings.show(keysTree, x, y);
-    }
-
-    private static void doList(int x, int y) {
-        if (popupList == null) {
-            popupList = new JPopupMenu();
-            popupList.add(new RemoveKeyListAction());
-            popupList.add(new NewListAction());
-            popupList.add(new RemoveListAction());
-        }
-        popupList.show(keysTree, x, y);
-    }
-
-    private static void doKeyInList(int x, int y) {
-        if (popupKeyInList == null) {
-            popupKeyInList = new JPopupMenu();
-            popupKeyInList.add(new AliasKeyAction());
-            popupKeyInRings.add(new CopyKeyAction());
-            popupKeyInList.add(new ExportKeyAction());
-            popupKeyInList.add(new RemoveKeyListAction());
-        }
-        popupKeyInList.show(keysTree, x, y);
-    }
-
-    private static class MyMouseListener
-            extends MouseAdapter {
-        @Override
-        public void mousePressed(MouseEvent me) {
-            if (me.getButton() != MouseEvent.BUTTON3)
-                return;
-            int x = me.getX();
-            int y = me.getY();
-            int row = keysTree.getRowForLocation(x, y);
-            if (row < 0)
-                return;
-            TreePath path = keysTree.getPathForRow(row);
-            if (path == null)
-                return;
-            keysTree.setSelectionPath(path);
-            if (keyInSecretList(path))
-                doKeyInSecretList(x, y);
-            else if (isList(path))
-                doList(x, y);
-            else if (keyInList(path))
-                doKeyInList(x, y);
-            else if (isKey(path))
-                doKeyInPublicList(x, y);
-        }
     }
 }

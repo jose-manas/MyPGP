@@ -19,17 +19,16 @@ public class KeyGeneratingThread
     private long delta;
     private Exception executionException;
 
-    public KeyGeneratingThread(
+    KeyGeneratingThread(
             File directory,
-            String signAlgo, int signSize,
-            String encryptAlgo, int encryptSize,
+            String signAlgo,
+            String encryptAlgo,
             String name, String email, String comment,
             Date expireDate,
             char[] password) {
         keyGenerator = new KeyGenerator(
                 directory,
-                signAlgo, signSize,
-                encryptAlgo, encryptSize,
+                signAlgo, encryptAlgo,
                 name, email, comment,
                 expireDate,
                 password);
@@ -47,15 +46,15 @@ public class KeyGeneratingThread
         delta = (t2 - t1) / 1000;
     }
 
-    public String getResult() {
+    String getResult() {
         return result;
     }
 
-    public Exception getExecutionException() {
+    Exception getExecutionException() {
         return executionException;
     }
 
-    public long getDelta() {
+    long getDelta() {
         return delta;
     }
 }

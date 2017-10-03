@@ -26,7 +26,7 @@ public class KeyGenPanel
 
     private final AlgoPanel2 algoPanel;
 
-    public KeyGenPanel() {
+    KeyGenPanel() {
         algoPanel = new AlgoPanel2();
 
         addItem(mandatory("name"), nameField);
@@ -58,7 +58,7 @@ public class KeyGenPanel
         return text.trim();
     }
 
-    public String getEmail() {
+    String getEmail() {
         String text = emailField.getText().trim();
         if (text.length() == 0)
             return "";
@@ -101,19 +101,11 @@ public class KeyGenPanel
         return null;
     }
 
-    public String getSignAlgo() {
+    String getSignAlgo() {
         return algoPanel.getSignAlgo();
     }
 
-    public String getEncryptAlgo() {
+    String getEncryptAlgo() {
         return algoPanel.getEncryptAlgo();
-    }
-
-    int getSignSize() {
-        return algoPanel.getSignSize();
-    }
-
-    int getEncryptSize() {
-        return algoPanel.getEncryptSize();
     }
 }

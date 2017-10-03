@@ -20,8 +20,6 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-
             Preferences preferences = Preferences.userRoot().node("mypgp");
 
             String langPreference = preferences.get("language", "en");

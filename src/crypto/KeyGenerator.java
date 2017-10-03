@@ -1,6 +1,5 @@
 package crypto;
 
-import gui.AlgoPanel2;
 import gui.ThreadUtilities;
 import gui.Version;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -58,43 +57,22 @@ public class KeyGenerator {
 
     private File directory;
     private String signAlgo;
-    private int signSize;
     private String encryptAlgo;
-    private int encryptfrmw;
-    private int encryptSize;
     private Date expireDate;
     private char[] password;
     private String userId;
     private String filename;
 
     public KeyGenerator(File directory,
-                        String signAlgo, int signSize,
-                        String encryptAlgo, int encryptSize,
+                        String signAlgo,
+                        String encryptAlgo,
                         String name, String email, String comment,
                         Date expireDate,
                         char[] password) {
         this.directory = directory;
         this.signAlgo = signAlgo;
-        this.signSize = signSize;
+        this.encryptAlgo = encryptAlgo;
 
-        if (encryptAlgo == null) {
-            this.encryptAlgo = null;
-        } else if (encryptAlgo.equalsIgnoreCase(AlgoPanel2.RSA)) {
-            this.encryptAlgo = "RSA";
-        } else if (encryptAlgo.equalsIgnoreCase(AlgoPanel2.ELGAMAL)) {
-            this.encryptAlgo = "ELG-E";
-            this.encryptfrmw = 0;
-        } else if (encryptAlgo.equalsIgnoreCase(AlgoPanel2.ELGAMAL_IETF)) {
-            this.encryptAlgo = "ELG-E";
-            this.encryptfrmw = 1;
-        } else if (encryptAlgo.equalsIgnoreCase(AlgoPanel2.ELGAMAL_GNUPG)) {
-            this.encryptAlgo = "ELG-E";
-            this.encryptfrmw = 2;
-        } else if (encryptAlgo.equalsIgnoreCase(AlgoPanel2.ECDH)) {
-            this.encryptAlgo = "ECDH";
-        }
-
-        this.encryptSize = encryptSize;
         this.expireDate = expireDate;
         this.password = password;
 
@@ -109,30 +87,96 @@ public class KeyGenerator {
             NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InterruptedException {
         PGPKeyPair kp_sign = null;
-        if (signAlgo.equalsIgnoreCase(AlgoPanel2.RSA))
-            kp_sign = mkRSASign();
-        else if (signAlgo.equalsIgnoreCase(AlgoPanel2.DSA))
-            kp_sign = mkDSA();
-        else if (signAlgo.equalsIgnoreCase(AlgoPanel2.ECDSA))
-            kp_sign = mkECDSA();
+        if (signAlgo.equalsIgnoreCase(CryptoAlgo.RSA_1024))
+            kp_sign = mkRSASign(1024);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.RSA_2048))
+            kp_sign = mkRSASign(2048);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.RSA_3072))
+            kp_sign = mkRSASign(3072);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.RSA_4096))
+            kp_sign = mkRSASign(4096);
+
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_1024))
+            kp_sign = mkDSA(1024);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_2048))
+            kp_sign = mkDSA(2048);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_3072))
+            kp_sign = mkDSA(3072);
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_4096))
+            kp_sign = mkDSA(4096);
+
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_192))
+            kp_sign = mkECDSA("P-192");
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_224))
+            kp_sign = mkECDSA("P-224");
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_256))
+            kp_sign = mkECDSA("P-256");
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_384))
+            kp_sign = mkECDSA("P-384");
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_521))
+            kp_sign = mkECDSA("P-521");
+        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_25519))
+            kp_sign = mkECDSA("curve25519");
 
         ThreadUtilities.ifInterruptedStop();
 
         PGPKeyPair kp_enc = null;
         if (encryptAlgo == null)
             kp_enc = null;
-        else if (encryptAlgo.equalsIgnoreCase("RSA"))
-            kp_enc = mkRSAEncrypt();
-        else if (encryptAlgo.equalsIgnoreCase("ELG-E")) {
-            if (encryptfrmw == 0)
-                kp_enc = ElgKeyGenerator.bc(encryptSize, now);
-            else if (encryptfrmw == 1)
-                kp_enc = ElgKeyGenerator.ietf(encryptSize, now);
-            else if (encryptfrmw == 2)
-                kp_enc = ElgKeyGenerator.gpg(encryptSize, now);
-        } else if (encryptAlgo.equalsIgnoreCase("ECDH")) {
-            kp_enc = mkECDH();
-        }
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.RSA_1024))
+            kp_enc = mkRSAEncrypt(1024);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.RSA_2048))
+            kp_enc = mkRSAEncrypt(2048);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.RSA_3072))
+            kp_enc = mkRSAEncrypt(3072);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.RSA_4096))
+            kp_enc = mkRSAEncrypt(4096);
+
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.IETF_1024))
+            kp_enc = ElgKeyGenerator.ietf(1024, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.IETF_1536))
+            kp_enc = ElgKeyGenerator.ietf(1536, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.IETF_2048))
+            kp_enc = ElgKeyGenerator.ietf(2048, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.IETF_3072))
+            kp_enc = ElgKeyGenerator.ietf(3072, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.IETF_4096))
+            kp_enc = ElgKeyGenerator.ietf(4096, now);
+
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.GPG_1024))
+            kp_enc = ElgKeyGenerator.gpg(1024, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.GPG_1536))
+            kp_enc = ElgKeyGenerator.gpg(1536, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.GPG_2048))
+            kp_enc = ElgKeyGenerator.gpg(2048, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.GPG_3072))
+            kp_enc = ElgKeyGenerator.gpg(3072, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.GPG_4096))
+            kp_enc = ElgKeyGenerator.gpg(4096, now);
+
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ELG_1024))
+            kp_enc = ElgKeyGenerator.bc(1024, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ELG_1536))
+            kp_enc = ElgKeyGenerator.bc(1536, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ELG_2048))
+            kp_enc = ElgKeyGenerator.bc(2048, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ELG_3072))
+            kp_enc = ElgKeyGenerator.bc(3072, now);
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ELG_4096))
+            kp_enc = ElgKeyGenerator.bc(4096, now);
+
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_192))
+            kp_enc = mkECDH("P-192");
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_224))
+            kp_enc = mkECDH("P-224");
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_256))
+            kp_enc = mkECDH("P-256");
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_384))
+            kp_enc = mkECDH("P-384");
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_521))
+            kp_enc = mkECDH("P-521");
+        else if (encryptAlgo.equalsIgnoreCase(CryptoAlgo.ECDH_25519))
+            kp_sign = mkECDH("curve25519");
 
         ThreadUtilities.ifInterruptedStop();
 
@@ -141,8 +185,6 @@ public class KeyGenerator {
             return "";
 
         ThreadUtilities.ifInterruptedStop();
-
-//        File directory = Info.getHome();
 
         File pubFile;
         {
@@ -170,30 +212,30 @@ public class KeyGenerator {
         return pubFile.getCanonicalPath();
     }
 
-    private PGPKeyPair mkRSASign()
+    private PGPKeyPair mkRSASign(int bits)
             throws NoSuchProviderException, NoSuchAlgorithmException, PGPException {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        kpg.initialize(signSize);
+        kpg.initialize(bits);
         return new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), now);
     }
 
-    private PGPKeyPair mkRSAEncrypt()
+    private PGPKeyPair mkRSAEncrypt(int bits)
             throws NoSuchProviderException, NoSuchAlgorithmException, PGPException {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
-        kpg.initialize(encryptSize);
+        kpg.initialize(bits);
         return new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpg.generateKeyPair(), now);
     }
 
-    private PGPKeyPair mkDSA()
+    private PGPKeyPair mkDSA(int bits)
             throws NoSuchProviderException, NoSuchAlgorithmException, PGPException {
         KeyPairGenerator dsaKpg = KeyPairGenerator.getInstance("DSA", "BC");
-        dsaKpg.initialize(signSize);
+        dsaKpg.initialize(bits);
         return new JcaPGPKeyPair(PGPPublicKey.DSA, dsaKpg.generateKeyPair(), now);
     }
 
-    private PGPKeyPair mkECDSA()
+    private PGPKeyPair mkECDSA(String curve)
             throws NoSuchProviderException, NoSuchAlgorithmException, PGPException, InvalidAlgorithmParameterException {
-        ECParameterSpec spec = getEcCurve(signSize);
+        ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(curve);
         if (spec == null)
             return null;
         KeyPairGenerator ecdsaKpg = KeyPairGenerator.getInstance("ECDSA", "BC");
@@ -201,31 +243,14 @@ public class KeyGenerator {
         return new JcaPGPKeyPair(PGPPublicKey.ECDSA, ecdsaKpg.generateKeyPair(), now);
     }
 
-    private PGPKeyPair mkECDH()
+    private PGPKeyPair mkECDH(String curve)
             throws NoSuchProviderException, NoSuchAlgorithmException, PGPException, InvalidAlgorithmParameterException {
-        ECParameterSpec spec = getEcCurve(encryptSize);
+        ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(curve);
         if (spec == null)
             return null;
         KeyPairGenerator ecdhKpg = KeyPairGenerator.getInstance("ECDH", "BC");
         ecdhKpg.initialize(spec);
         return new JcaPGPKeyPair(PGPPublicKey.ECDH, ecdhKpg.generateKeyPair(), now);
-    }
-
-    private ECParameterSpec getEcCurve(int size) {
-        if (size == AlgoPanel2.CURVE_25519)
-            // wait for OpenPGP to decide parameters
-            return ECNamedCurveTable.getParameterSpec("Curve-25519");
-        if (size <= 192)
-            return ECNamedCurveTable.getParameterSpec("P-192");
-        if (size <= 224)
-            return ECNamedCurveTable.getParameterSpec("P-224");
-        if (size <= 256)
-            return ECNamedCurveTable.getParameterSpec("P-256");     // must
-        if (size <= 384)
-            return ECNamedCurveTable.getParameterSpec("P-384");     // may
-        if (size <= 521)
-            return ECNamedCurveTable.getParameterSpec("P-521");     // should
-        return null;
     }
 
     private PGPKeyRingGenerator mkRingGenerator(PGPKeyPair kp_sign, PGPKeyPair kp_enc)

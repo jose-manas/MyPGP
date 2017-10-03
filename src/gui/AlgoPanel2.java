@@ -1,5 +1,6 @@
 package gui;
 
+import crypto.CryptoAlgo;
 import gui.imgs.Icons;
 
 import javax.swing.*;
@@ -13,38 +14,34 @@ import java.awt.event.ActionListener;
  */
 public class AlgoPanel2
         extends JPanel {
-    public static final String RSA = "RSA";
-    public static final String DSA = "DSA";
-    public static final String ECDSA = "ECDSA";
-    public static final String ELGAMAL_IETF = "Elgamal /IETF";
-    public static final String ELGAMAL_GNUPG = "Elgamal /GnuPG";
-    public static final String ELGAMAL = "Elgamal";
-    public static final String ECDH = "ECDH";
-
-    public static final int CURVE_25519 = -1;
+    private static final String RSA = "RSA";
+    private static final String DSA = "DSA";
+    private static final String ECDSA = "ECDSA";
+    private static final String ELGAMAL_IETF = "Elgamal /IETF";
+    private static final String ELGAMAL_GNUPG = "Elgamal /GnuPG";
+    private static final String ELGAMAL = "Elgamal";
+    private static final String ECDH = "ECDH";
 
     private final JCheckBox sign;
     private final JTextField signAlgo;
-    private static String selectedSignAlgo = RSA;
-    private static int selectedSignSize = 2048;
+    private static String selectedSignAlgo = CryptoAlgo.RSA_2048;
 
     private final JCheckBox encrypt;
     private final JTextField encryptAlgo;
-    private static String selectedEncryptAlgo = RSA;
-    private static int selectedEncryptSize = 2048;
+    private static String selectedEncryptAlgo = CryptoAlgo.RSA_2048;
 
     AlgoPanel2() {
         super(new SpringLayout());
 
         sign = new JCheckBox(Text.get("sign"));
         signAlgo = new JTextField(20);
-        signAlgo.setText(String.format("%s (%d)", selectedSignAlgo, selectedSignSize));
+        signAlgo.setText(selectedSignAlgo);
         JButton signAlgoSel = new BasicArrowButton(BasicArrowButton.SOUTH);
         signAlgoSel.addActionListener(new SignSelectionAction());
 
         encrypt = new JCheckBox(Text.get("encrypt"));
         encryptAlgo = new JTextField(20);
-        encryptAlgo.setText(String.format("%s (%d)", selectedEncryptAlgo, selectedEncryptSize));
+        encryptAlgo.setText(selectedEncryptAlgo);
         JButton encryptAlgoSel = new BasicArrowButton(BasicArrowButton.SOUTH);
         encryptAlgoSel.addActionListener(new EncryptSelectionAction());
 
@@ -69,126 +66,134 @@ public class AlgoPanel2
                 2, 4, //rows, cols
                 5, 5, //initialX, initialY
                 5, 5);//xPad, yPad
-
     }
 
     private static JLabel blank() {
         return new JLabel("");
     }
-
-    public String getSignAlgo() {
+    
+    String getSignAlgo() {
         return selectedSignAlgo;
     }
-
-    int getSignSize() {
-        try {
-            return selectedSignSize;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    public String getEncryptAlgo() {
+    
+    String getEncryptAlgo() {
         if (encrypt.isSelected())
             return selectedEncryptAlgo;
         else
             return null;
     }
-
-    int getEncryptSize() {
-        try {
-            if (encrypt.isSelected())
-                return selectedEncryptSize;
-            else
-                return 0;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
+    
     private class SignSelectionAction
             implements ActionListener {
         private final JPopupMenu popupMenu;
 
         SignSelectionAction() {
             popupMenu = new JPopupMenu("sign");
-            add(popupMenu, RSA, 1024, 2048, 3072, 4096);
-            add(popupMenu, DSA, 1024, 2048, 3072, 4096);
+            add(popupMenu, RSA,
+                    CryptoAlgo.RSA_1024,
+                    CryptoAlgo.RSA_2048,
+                    CryptoAlgo.RSA_3072,
+                    CryptoAlgo.RSA_4096);
+            add(popupMenu, DSA,
+                    CryptoAlgo.DSA_1024,
+                    CryptoAlgo.DSA_2048,
+                    CryptoAlgo.DSA_3072,
+                    CryptoAlgo.DSA_4096);
             // NIST FIPS-PUB 186-4 July 2013
 //          "B-163", "B-233", "B-283", "B-409", "B-571"
 //          "K-163", "K-233", "K-283", "K-409", "K-571"
 //          "P-192", "P-224", "P-256", "P-384", "P-521"
-            add(popupMenu, ECDSA, 192, 224, 256, 384, 521);
+            add(popupMenu, ECDSA,
+                    CryptoAlgo.ECDSA_192,
+                    CryptoAlgo.ECDSA_224,
+                    CryptoAlgo.ECDSA_256,
+//                    CryptoAlgo.ECDSA_25519,   wait for 25519 support
+                    CryptoAlgo.ECDSA_384,
+                    CryptoAlgo.ECDSA_521);
 //            add(popupMenu, ECDSA, 192, 224, 256, CURVE_25519, 384, 521);
         }
-
-        private void add(JPopupMenu popupMenu, String algo, int... sizes) {
-            JMenu menu = new JMenu(algo);
+        
+        private void add(JPopupMenu popupMenu, String family, String... algos) {
+            JMenu menu = new JMenu(family);
             popupMenu.add(menu);
-            for (int size : sizes)
-                if (size == CURVE_25519)
-                    menu.add(new SignOption_Curve25519());
-                else
-                    menu.add(new SignOption(algo, size));
+            for (String algo : algos)
+                menu.add(new SignOption(algo));
         }
 
         public void actionPerformed(ActionEvent event) {
             popupMenu.show((JComponent) event.getSource(), 10, 10);
         }
     }
-
-    private class SignOption_Curve25519
-            extends JMenuItem {
-        private static final String TITLE = "ECDSA (Curve-25519)";
-
-        SignOption_Curve25519() {
-            super(TITLE);
-            addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    selectedSignAlgo = ECDSA;
-                    selectedSignSize = -1;
-                    signAlgo.setText(TITLE);
-                }
-            });
-        }
-    }
-
+    
     private class SignOption
             extends JMenuItem {
-        SignOption(final String algo, final int size) {
-            super(String.format("%s (%d)", algo, size));
+        SignOption(final String algo) {
+            super(shortText(algo));
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     selectedSignAlgo = algo;
-                    selectedSignSize = size;
-                    signAlgo.setText(String.format("%s (%d)", algo, size));
+                    signAlgo.setText(algo);
                 }
             });
         }
     }
-
+    
     private class EncryptSelectionAction
             implements ActionListener {
         private final JPopupMenu popupMenu;
 
         EncryptSelectionAction() {
             popupMenu = new JPopupMenu("encrypt");
-            add(popupMenu, RSA, 1024, 2048, 3072, 4096);
-            add(popupMenu, ELGAMAL_IETF, 1024, 1536, 2048, 3072, 4096);
-            add(popupMenu, ELGAMAL_GNUPG, 1024, 1536, 2048, 3072, 4096);
-            add(popupMenu, ELGAMAL, 1024, 1536, 2048, 3072, 4096);
+//            add(popupMenu, RSA, 1024, 2048, 3072, 4096);
+            add(popupMenu, RSA,
+                    CryptoAlgo.RSA_1024,
+                    CryptoAlgo.RSA_2048,
+                    CryptoAlgo.RSA_3072,
+                    CryptoAlgo.RSA_4096);
+
+//            add(popupMenu, ELGAMAL_IETF, 1024, 1536, 2048, 3072, 4096);
+            add(popupMenu, ELGAMAL_IETF,
+                    CryptoAlgo.IETF_1024,
+                    CryptoAlgo.IETF_1536,
+                    CryptoAlgo.IETF_2048,
+                    CryptoAlgo.IETF_3072,
+                    CryptoAlgo.IETF_4096);
+
+//            add(popupMenu, ELGAMAL_GNUPG, 1024, 1536, 2048, 3072, 4096);
+            add(popupMenu, ELGAMAL_GNUPG,
+                    CryptoAlgo.GPG_1024,
+                    CryptoAlgo.GPG_1536,
+                    CryptoAlgo.GPG_2048,
+                    CryptoAlgo.GPG_3072,
+                    CryptoAlgo.GPG_4096);
+
+//            add(popupMenu, ELGAMAL, 1024, 1536, 2048, 3072, 4096);
+            add(popupMenu, ELGAMAL,
+                    CryptoAlgo.ELG_1024,
+                    CryptoAlgo.ELG_1536,
+                    CryptoAlgo.ELG_2048,
+                    CryptoAlgo.ELG_3072,
+                    CryptoAlgo.ELG_4096);
+
             // NIST FIPS-PUB 186-4 July 2013
 //          "B-163", "B-233", "B-283", "B-409", "B-571"
 //          "K-163", "K-233", "K-283", "K-409", "K-571"
 //          "P-192", "P-224", "P-256", "P-384", "P-521"
-            add(popupMenu, ECDH, 192, 224, 256, 384, 521);
+//            add(popupMenu, ECDH, 192, 224, 256, 384, 521);
+            add(popupMenu, ECDH,
+                    CryptoAlgo.ECDH_192,
+                    CryptoAlgo.ECDH_224,
+                    CryptoAlgo.ECDH_256,
+//                    CryptoAlgo.ECDH_25519,    wait for 25519 support
+                    CryptoAlgo.ECDH_384,
+                    CryptoAlgo.ECDH_521);
         }
 
-        private void add(JPopupMenu popupMenu, String algo, int... sizes) {
-            JMenu menu = new JMenu(algo);
+        private void add(JPopupMenu popupMenu, String family, String... algos) {
+            JMenu menu = new JMenu(family);
             popupMenu.add(menu);
-            for (int size : sizes)
-                menu.add(new EncryptOption(algo, size));
+            for (String algo : algos)
+                menu.add(new EncryptOption(algo));
         }
 
         public void actionPerformed(ActionEvent event) {
@@ -199,15 +204,23 @@ public class AlgoPanel2
 
     private class EncryptOption
             extends JMenuItem {
-        EncryptOption(final String algo, final int size) {
-            super(String.format("%s (%d)", algo, size));
+        EncryptOption(final String algo) {
+            super(shortText(algo));
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     selectedEncryptAlgo = algo;
-                    selectedEncryptSize = size;
-                    encryptAlgo.setText(String.format("%s (%d)", algo, size));
+                    encryptAlgo.setText(algo);
                 }
             });
+        }
+    }
+
+    private static String shortText(String algo) {
+        try {
+            int dotdot= algo.indexOf(':');
+            return algo.substring(dotdot+1).trim();
+        } catch (Exception e) {
+            return algo;
         }
     }
 

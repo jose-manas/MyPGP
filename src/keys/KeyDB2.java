@@ -1,12 +1,13 @@
 package keys;
 
-import gui.Text;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 
 import java.io.PrintWriter;
-import java.text.Collator;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
 
 // 22.5.2011 alias
 // 24.6.2011 signatures
@@ -27,7 +28,7 @@ public class KeyDB2 {
         return keys.get(id);
     }
 
-    public static Key getKey(String kid) {
+    static Key getKey(String kid) {
         kid = kid.toLowerCase();
         for (Key key : keys.values()) {
             String kid1 = key.getKid().toLowerCase();
@@ -37,20 +38,20 @@ public class KeyDB2 {
         return null;
     }
 
-    public static Set<Key> getSecretKeys() {
-        Set<Key> keySet = new TreeSet<>(new Comparator<Key>() {
-            Collator collator = Collator.getInstance(Text.getLocale());
-
-            public int compare(Key key1, Key key2) {
-                return collator.compare(key1.toString(), key2.toString());
-            }
-        });
-        for (Key key : keys.values()) {
-            if (key.isSecret())
-                keySet.add(key);
-        }
-        return keySet;
-    }
+//    public static Set<Key> getSecretKeys() {
+//        Set<Key> keySet = new TreeSet<>(new Comparator<Key>() {
+//            Collator collator = Collator.getInstance(Text.getLocale());
+//
+//            public int compare(Key key1, Key key2) {
+//                return collator.compare(key1.toString(), key2.toString());
+//            }
+//        });
+//        for (Key key : keys.values()) {
+//            if (key.isSecret())
+//                keySet.add(key);
+//        }
+//        return keySet;
+//    }
 
     public static PGPPublicKey getPublicKey(Long id) {
         return publicKeys.get(id);

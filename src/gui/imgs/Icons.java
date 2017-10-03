@@ -19,6 +19,9 @@ public class Icons {
     private static ImageIcon listIcon;
     private static ImageIcon openIcon;
     private static ImageIcon textIcon;
+    private static ImageIcon noneIcon;
+    private static ImageIcon partialIcon;
+    private static ImageIcon fullIcon;
 
     public static Image getPgpImage() {
         if (pgpIcon16 == null)
@@ -80,13 +83,31 @@ public class Icons {
         return textIcon;
     }
 
+    public static Icon getNoneSelectionIcon() {
+        if (noneIcon == null)
+            noneIcon = loadIcon("none.png");
+        return noneIcon;
+    }
+
+    public static Icon getPartialSelectionIcon() {
+        if (partialIcon == null)
+            partialIcon = loadIcon("partial.png");
+        return partialIcon;
+    }
+
+    public static Icon getFullSelectionIcon() {
+        if (fullIcon == null)
+            fullIcon = loadIcon("full.png");
+        return fullIcon;
+    }
+
     private static ImageIcon loadIcon(String name) {
         Class imgs = Icons.class;
         try {
             URL url = imgs.getResource(name);
             return new ImageIcon(url);
         } catch (Exception e) {
-            System.err.println("no se puede cargar "
+            System.err.println("no "
                     + imgs.getPackage().getName()
                     + System.getProperty("file.separator")
                     + name);

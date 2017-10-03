@@ -45,15 +45,11 @@ public class GpgElgamal {
 
     public static BigInteger[] generateParameters(int size)
             throws InterruptedException {
-//        System.out.println("  generateP(): " + new Date());
         BigInteger p = generateP(size);
 
         ThreadUtilities.ifInterruptedStop();
 
-//        System.out.println("  selectGenerator():    " + new Date());
         BigInteger g = selectGenerator(p);
-//        System.out.println("  done:                 " + new Date());
-//        System.out.println();
         return new BigInteger[]{p, g};
     }
 

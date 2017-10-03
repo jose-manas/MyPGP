@@ -70,6 +70,8 @@ public class CRLF {
                 // binary
                 return new BufferedInputStream(in);
             }
+        } catch (Exception e) {
+            return in;
         }
     }
 
