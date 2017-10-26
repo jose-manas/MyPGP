@@ -135,7 +135,7 @@ public class BcUtilsFiles {
             int signAlgo = publicKey.getAlgorithm();
             int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
             MyPGP.log2(String.format("%s: %s(%s)",
-                    signerKey,
+                    Text.get("sign"),
                     ToString.publicKey(signAlgo),
                     ToString.hash(hashAlgo)));
 
@@ -208,7 +208,7 @@ public class BcUtilsFiles {
                 int signAlgo = publicKey.getAlgorithm();
                 int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
                 MyPGP.log2(String.format("%s: %s(%s)",
-                        signerKey,
+                        Text.get("sign"),
                         ToString.publicKey(signAlgo),
                         ToString.hash(hashAlgo)));
 
@@ -316,7 +316,7 @@ public class BcUtilsFiles {
                     int signAlgo = publicKey.getAlgorithm();
                     int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
                     MyPGP.log2(String.format("%s: %s(%s)",
-                            signerKey,
+                            Text.get("sign"),
                             ToString.publicKey(signAlgo),
                             ToString.hash(hashAlgo)));
 

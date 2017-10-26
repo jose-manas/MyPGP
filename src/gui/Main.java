@@ -1,13 +1,11 @@
 package gui;
 
-import bc.ClasspathHacker;
 import exception.MyLogger;
 import gui.imgs.Icons;
 import keys.Info;
 
 import javax.swing.*;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.prefs.Preferences;
 
 /**
@@ -47,22 +45,26 @@ public class Main {
             preferences.put("root", home.getCanonicalPath());
             Info.setHome(home);
 
-            File jarlib = new File(home, "_lib");
-            if (!(jarlib.exists() && jarlib.isDirectory()))
-                jarlib = new File(home, "lib.skip");
-            if (!(jarlib.exists() && jarlib.isDirectory()))
-                jarlib = home;
-
-            File[] jars = jarlib.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".jar");
-                }
-            });
-
-            if (jars != null) {
-                for (File file : jars)
-                    ClasspathHacker.addFile(file);
-            }
+//            File jarlib = new File(home, "_lib");
+//            if (!(jarlib.exists() && jarlib.isDirectory()))
+//                jarlib = new File(home, "lib.skip");
+//            if (!(jarlib.exists() && jarlib.isDirectory()))
+//                jarlib = home;
+//
+//            File[] jars = jarlib.listFiles(new FilenameFilter() {
+//                public boolean accept(File dir, String name) {
+//                    return name.endsWith(".jar");
+//                }
+//            });
+//
+//            if (jars != null) {
+//                String version = System.getProperty("java.version");
+//                if (version.startsWith("9")) {
+//                    ClasspathHacker.addFiles9(jars);
+//                } else {
+//                    ClasspathHacker.addFiles8(jars);
+//                }
+//            }
 
             MyPGP.start();
         } catch (NoHomeException nhe) {
@@ -75,6 +77,7 @@ public class Main {
                     Icons.getPgpIcon());
             System.exit(1);
         } catch (Throwable e) {
+            e.printStackTrace();
             MyLogger.record(e);
             String message = Text.get("no_libraries");
             String title = "https://www.bouncycastle.org/";

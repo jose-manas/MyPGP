@@ -217,4 +217,8 @@ public class Directory {
     public int hashCode() {
         return file.hashCode();
     }
+
+    public File getFile() {
+        return file;
+    }
 }
