@@ -25,11 +25,13 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.security.SecureRandom;
 import java.util.*;
@@ -58,6 +60,8 @@ import java.util.prefs.Preferences;
  * @version 30.12.2016
  */
 public class MyPGP {
+    private static final DataFlavor FILE_LIST_FLAVOR = DataFlavor.javaFileListFlavor;
+
     private static MyDirectoryChooser keyFileChooser;
     private static Directory directory;
     private static JButton processButton;
@@ -103,6 +107,11 @@ public class MyPGP {
             frame.setJMenuBar(getMenuBar());
             frame.getContentPane().add(getPanel());
             frame.pack();
+
+            GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            Rectangle total = graphicsEnvironment.getMaximumWindowBounds();
+            frame.setSize(total.width / 2, total.height / 2);
+
             frame.setExtendedState(Frame.MAXIMIZED_BOTH);
 
             frame.setVisible(true);
@@ -136,11 +145,13 @@ public class MyPGP {
                         return;
                     }
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    List<File> droppedFiles = (List<File>)
-                            evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    for (File srcFile : droppedFiles)
-                        copy(dir, srcFile);
-                    reloadKeys();
+                    Transferable transferable = evt.getTransferable();
+                    if (transferable.isDataFlavorSupported(FILE_LIST_FLAVOR)) {
+                        List<File> droppedFiles = (List<File>) transferable.getTransferData(FILE_LIST_FLAVOR);
+                        for (File srcFile : droppedFiles)
+                            copy(dir, srcFile);
+                        reloadKeys();
+                    }
                 } catch (Exception ex) {
                     MyLogger.dump(ex, Text.get("drop"));
                 }
@@ -166,7 +177,7 @@ public class MyPGP {
     }
 
     private static File getDirectory(DefaultMutableTreeNode node) {
-        boolean publicbranch= false;
+        boolean publicbranch = false;
         for (DefaultMutableTreeNode n = node; n != null; n = (DefaultMutableTreeNode) n.getParent()) {
             Object object = n.getUserObject();
             if (object == pubKeyBranch) {
@@ -485,9 +496,11 @@ public class MyPGP {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    List<File> droppedFiles = (List<File>)
-                            evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    decrypt_verify_Selection(droppedFiles.toArray(new File[droppedFiles.size()]));
+                    Transferable transferable = evt.getTransferable();
+                    if (transferable.isDataFlavorSupported(FILE_LIST_FLAVOR)) {
+                        List<File> droppedFiles = (List<File>) transferable.getTransferData(FILE_LIST_FLAVOR);
+                        decrypt_verify_Selection(droppedFiles.toArray(new File[droppedFiles.size()]));
+                    }
                 } catch (Exception ex) {
                     MyLogger.dump(ex, Text.get("drop"));
                 }
@@ -497,9 +510,11 @@ public class MyPGP {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
-                    List<File> droppedFiles = (List<File>)
-                            evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-                    encrypt_sign_Selection(droppedFiles.toArray(new File[droppedFiles.size()]));
+                    Transferable transferable = evt.getTransferable();
+                    if (transferable.isDataFlavorSupported(FILE_LIST_FLAVOR)) {
+                        List<File> droppedFiles = (List<File>) transferable.getTransferData(FILE_LIST_FLAVOR);
+                        encrypt_sign_Selection(droppedFiles.toArray(new File[droppedFiles.size()]));
+                    }
                 } catch (Exception ex) {
                     MyLogger.dump(ex, Text.get("drop"));
                 }
@@ -1023,45 +1038,48 @@ public class MyPGP {
         }
 
         public void actionPerformed(ActionEvent event) {
-            String action = Text.get("encrypt_sign");
-            List<Key> encryptingKeys = getEncryptingKeys();
-            List<Key> signingKeys = getSigningKeys();
-            if (encryptingKeys.size() + signingKeys.size() == 0)
-                return;
-
-            log1(action);
-            Key signingKey = null;
-            char[] password = new char[0];
-            if (signingKeys.size() > 0) {
-                try {
-                    signingKey = signingKeys.get(0);
-                    password = GetPassword.getInstance().getDecryptionPassword(Text.get("sign"));
-                } catch (PasswordCancelled passwordCancelled) {
-                    return;
-                }
-            }
-
-            try {
-                String redText = MyClipBoard.readString();
-                String blackText = "";
-                log(action + " " + Text.get("clipboard"));
-                if (encryptingKeys.size() > 0 && signingKeys.size() > 0)
-                    blackText = BcUtilsClipboard.encrypt_sign(redText, encryptingKeys, signingKey, password);
-                if (encryptingKeys.size() > 0 && signingKeys.size() == 0)
-                    blackText = BcUtilsClipboard.encrypt(redText, encryptingKeys);
-                if (encryptingKeys.size() == 0 && signingKeys.size() > 0)
-                    blackText = BcUtilsClipboard.sign(redText, signingKey, password);
-                MyClipBoard.write(blackText);
-            } catch (PGPException e) {
-                log2(e.toString());
-                if (e.getUnderlyingException() != null)
-                    MyLogger.dump(e.getUnderlyingException(), action);
-            } catch (Exception e) {
-                MyLogger.dump(e, action);
-            }
-
-            clearPassword(password);
+            encrypt_sign_Clipboard(MyClipBoard.readString());
         }
+    }
+
+    private static void encrypt_sign_Clipboard(String redText) {
+        String action = Text.get("encrypt_sign");
+        List<Key> encryptingKeys = getEncryptingKeys();
+        List<Key> signingKeys = getSigningKeys();
+        if (encryptingKeys.size() + signingKeys.size() == 0)
+            return;
+
+        log1(action);
+        Key signingKey = null;
+        char[] password = new char[0];
+        if (signingKeys.size() > 0) {
+            try {
+                signingKey = signingKeys.get(0);
+                password = GetPassword.getInstance().getDecryptionPassword(Text.get("sign"));
+            } catch (PasswordCancelled passwordCancelled) {
+                return;
+            }
+        }
+
+        try {
+            String blackText = "";
+            log(action + " " + Text.get("clipboard"));
+            if (encryptingKeys.size() > 0 && signingKeys.size() > 0)
+                blackText = BcUtilsClipboard.encrypt_sign(redText, encryptingKeys, signingKey, password);
+            if (encryptingKeys.size() > 0 && signingKeys.size() == 0)
+                blackText = BcUtilsClipboard.encrypt(redText, encryptingKeys);
+            if (encryptingKeys.size() == 0 && signingKeys.size() > 0)
+                blackText = BcUtilsClipboard.sign(redText, signingKey, password);
+            MyClipBoard.write(blackText);
+        } catch (PGPException e) {
+            log2(e.toString());
+            if (e.getUnderlyingException() != null)
+                MyLogger.dump(e.getUnderlyingException(), action);
+        } catch (Exception e) {
+            MyLogger.dump(e, action);
+        }
+
+        clearPassword(password);
     }
 
     private static class DecryptClipAction
@@ -1578,7 +1596,7 @@ public class MyPGP {
     }
 
     private static void clearPassword(char[] password) {
-        for (int i= 0; i < password.length; i++)
+        for (int i = 0; i < password.length; i++)
             password[i] = (char) random.nextInt();
     }
 }
