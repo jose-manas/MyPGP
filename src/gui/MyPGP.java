@@ -38,23 +38,6 @@ import java.util.*;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-// 22.5.2011 export multiple keys
-// 22.5.2011 alias
-// 1.6.2011 lists
-// 8.6.2011 use file chooser to import keys
-// 29.6.2011 add logs of void actions
-// 29.6.2011 revise removal of keys from lists
-// 19.7.2011 look for recipients before decrypting
-// 2.9.2011 view clipboard
-// 2.9.2011 process clipboard
-// 29.10.2011 secure delete in right tool bar
-// 23.11.2011 show key id
-// 23.11.2011 show fingerprint
-// 7.7.2012 KeyDB replaced for KeyDB2
-// 23.6.2013 force cursor to end of log area after writing
-// 21.8.2014 fully revised
-// 24.8.2017 remove singleton architecture
-
 /**
  * @author Jose A. Manas
  * @version 30.12.2016
