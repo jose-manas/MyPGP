@@ -13,7 +13,7 @@ public class CryptoAlgo {
     public static final String DSA_1024 = "DSA: 1024 bits";
     public static final String DSA_2048 = "DSA: 2048 bits";
     public static final String DSA_3072 = "DSA: 3072 bits";
-    public static final String DSA_4096 = "DSA: 4096 bits";
+//    public static final String DSA_4096 = "DSA: 4096 bits";
 
     public static final String ECDSA_192 = "ECDSA: P-192 (192 bits)";
     public static final String ECDSA_224 = "ECDSA: P-224 (224 bits)";

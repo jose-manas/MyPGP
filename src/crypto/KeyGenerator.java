@@ -102,8 +102,8 @@ public class KeyGenerator {
             kp_sign = mkDSA(2048);
         else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_3072))
             kp_sign = mkDSA(3072);
-        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_4096))
-            kp_sign = mkDSA(4096);
+//        else if (signAlgo.equalsIgnoreCase(CryptoAlgo.DSA_4096))
+//            kp_sign = mkDSA(4096);
 
         else if (signAlgo.equalsIgnoreCase(CryptoAlgo.ECDSA_192))
             kp_sign = mkECDSA("P-192");
