@@ -94,11 +94,11 @@ public class AlgoPanel2
                     CryptoAlgo.RSA_2048,
                     CryptoAlgo.RSA_3072,
                     CryptoAlgo.RSA_4096);
-            add(popupMenu, DSA,
+            add(popupMenu, DSA,             // FIPS 186-4
                     CryptoAlgo.DSA_1024,
                     CryptoAlgo.DSA_2048,
-                    CryptoAlgo.DSA_3072,
-                    CryptoAlgo.DSA_4096);
+                    CryptoAlgo.DSA_3072);
+//                    CryptoAlgo.DSA_4096);
             // NIST FIPS-PUB 186-4 July 2013
 //          "B-163", "B-233", "B-283", "B-409", "B-571"
 //          "K-163", "K-233", "K-283", "K-409", "K-571"
