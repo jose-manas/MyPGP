@@ -111,6 +111,8 @@ public class Directory {
     }
 
     private void add(File file, Key key) {
+        if (key == null)
+            return;
         if (!key.isMasterKey())
             return;
         for (Key k : keys) {
@@ -174,7 +176,10 @@ public class Directory {
             Collator collator = Collator.getInstance(Text.getLocale());
 
             public int compare(Key key1, Key key2) {
-                return collator.compare(key1.toString(), key2.toString());
+                int compare = collator.compare(key1.toString(), key2.toString());
+                if (compare == 0)
+                    return key1.getKid().compareTo(key2.getKid());
+                return compare;
             }
         });
         sorted.addAll(keys);

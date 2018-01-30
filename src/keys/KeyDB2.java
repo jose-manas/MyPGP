@@ -1,5 +1,7 @@
 package keys;
 
+import exception.MyLogger;
+import gui.MyPGP;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 
@@ -90,7 +92,7 @@ public class KeyDB2 {
     static Key store(PGPPublicKey masterKey, PGPPublicKey publicKey) {
         publicKeys.put(publicKey.getKeyID(), publicKey);
         if (masterKey == null) {
-            System.out.println("no master key for " + publicKey);
+            MyPGP.log("no master key for " + publicKey);
             return null;
         }
 
@@ -109,7 +111,7 @@ public class KeyDB2 {
     static Key store(PGPSecretKey masterKey, PGPSecretKey secretKey) {
         secretKeys.put(secretKey.getKeyID(), secretKey);
         if (masterKey == null) {
-            System.out.println("no master key for " + secretKey);
+            MyPGP.log("no master key for " + secretKey);
             return null;
         }
 
