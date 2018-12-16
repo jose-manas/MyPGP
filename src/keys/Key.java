@@ -12,6 +12,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -39,6 +40,7 @@ public class Key
     private List<String> moreNames;
     private String alias;
     private String fingerprint;
+    private Set<File> fileList = new HashSet<>();
 
     private String corePresentation;
     private Map<Long, PGPPublicKey> publicSubkeys = new HashMap<>();
@@ -184,7 +186,7 @@ public class Key
         StringBuilder builder = new StringBuilder();
         int blocks = (fingerprint.length() + 3) / 4;
         for (int b = 0; b < blocks - 1; b++)
-            builder.append(fingerprint.substring(b * 4, (b + 1) * 4)).append(" ");
+            builder.append(fingerprint, b * 4, (b + 1) * 4).append(" ");
         builder.append(fingerprint.substring((blocks - 1) * 4));
         return builder.toString();
     }
@@ -416,5 +418,13 @@ public class Key
             list.add(secretKey);
         list.addAll(secretSubkeys.values());
         return list;
+    }
+
+    public Set<File> getFileList() {
+        return fileList;
+    }
+
+    public void setFile(File file) {
+        fileList.add(file);
     }
 }

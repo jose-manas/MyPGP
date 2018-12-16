@@ -53,10 +53,10 @@ public class CryptoAlgo {
     public CryptoAlgo(String code) {
         this.code = code;
         try {
-            int dotdot= code.indexOf(':');
-            shortText = code.substring(dotdot+1).trim();
+            int dotdot = code.indexOf(':');
+            shortText = code.substring(dotdot + 1).trim();
         } catch (Exception e) {
-            shortText= code;
+            shortText = code;
         }
     }
 

@@ -31,11 +31,10 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.*;
 import java.security.SecureRandom;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.prefs.Preferences;
 
 /**
@@ -361,6 +360,9 @@ public class MyPGP {
 
         detailNode.add(mkEncryptionAlgorithms(publicKey));
 
+        for (File file : key.getFileList())
+            keyNode.add(new DefaultMutableTreeNode(fromHome(file)));
+
         List<Long> signerList = key.getSigIds();
         if (signerList.size() > 0) {
             Set<Long> extHierarchy = new HashSet<>(hierarchy);
@@ -378,6 +380,18 @@ public class MyPGP {
             }
         }
         return keyNode;
+    }
+
+    private static String fromHome(File file) {
+        try {
+            String path = file.getCanonicalPath();
+            String homePath = Info.getHome().getCanonicalPath();
+            if (path.startsWith(homePath))
+                return path.substring(homePath.length() + 1);
+            return path;
+        } catch (IOException e) {
+            return file.getAbsolutePath();
+        }
     }
 
     private static DefaultMutableTreeNode mkEncryptionAlgorithms(PGPPublicKey publicKey) {

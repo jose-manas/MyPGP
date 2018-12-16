@@ -113,6 +113,7 @@ public class Directory {
     private void add(File file, Key key) {
         if (key == null)
             return;
+        key.setFile(file);
         if (!key.isMasterKey())
             return;
         for (Key k : keys) {

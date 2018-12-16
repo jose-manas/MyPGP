@@ -71,18 +71,18 @@ public class AlgoPanel2
     private static JLabel blank() {
         return new JLabel("");
     }
-    
+
     String getSignAlgo() {
         return selectedSignAlgo;
     }
-    
+
     String getEncryptAlgo() {
         if (encrypt.isSelected())
             return selectedEncryptAlgo;
         else
             return null;
     }
-    
+
     private class SignSelectionAction
             implements ActionListener {
         private final JPopupMenu popupMenu;
@@ -112,7 +112,7 @@ public class AlgoPanel2
                     CryptoAlgo.ECDSA_521);
 //            add(popupMenu, ECDSA, 192, 224, 256, CURVE_25519, 384, 521);
         }
-        
+
         private void add(JPopupMenu popupMenu, String family, String... algos) {
             JMenu menu = new JMenu(family);
             popupMenu.add(menu);
@@ -124,7 +124,7 @@ public class AlgoPanel2
             popupMenu.show((JComponent) event.getSource(), 10, 10);
         }
     }
-    
+
     private class SignOption
             extends JMenuItem {
         SignOption(final String algo) {
@@ -137,7 +137,7 @@ public class AlgoPanel2
             });
         }
     }
-    
+
     private class EncryptSelectionAction
             implements ActionListener {
         private final JPopupMenu popupMenu;
@@ -217,8 +217,8 @@ public class AlgoPanel2
 
     private static String shortText(String algo) {
         try {
-            int dotdot= algo.indexOf(':');
-            return algo.substring(dotdot+1).trim();
+            int dotdot = algo.indexOf(':');
+            return algo.substring(dotdot + 1).trim();
         } catch (Exception e) {
             return algo;
         }

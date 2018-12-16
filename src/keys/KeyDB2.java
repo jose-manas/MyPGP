@@ -1,6 +1,5 @@
 package keys;
 
-import exception.MyLogger;
 import gui.MyPGP;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
