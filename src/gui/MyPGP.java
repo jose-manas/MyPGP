@@ -64,9 +64,9 @@ public class MyPGP {
     private static MyFileChooser fch;
     private static JPanel keysPanel;
 
-    private static NewDirectoryAction newDirectoryAction;
-    private static RefreshAction refreshAction;
-    private static SecureDeleteAction secureDeleteAction;
+//    private static NewDirectoryAction newDirectoryAction;
+//    private static RefreshAction refreshAction;
+//    private static SecureDeleteAction secureDeleteAction;
 
     private static Set<Object> selection = new HashSet<>();
 
@@ -80,6 +80,8 @@ public class MyPGP {
         log("");
     }
 
+    private static JSplitPane mainPanel;
+
     public static void start() {
         Security.addProvider(new BouncyCastleProvider());
         try {
@@ -89,16 +91,21 @@ public class MyPGP {
 
             init();
             frame.setJMenuBar(getMenuBar());
-            frame.getContentPane().add(getPanel());
-            frame.pack();
+            getPanel();
 
             GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
             Rectangle total = graphicsEnvironment.getMaximumWindowBounds();
             frame.setSize(total.width / 2, total.height / 2);
 
-            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+//            frame.setExtendedState(Frame.MAXIMIZED_BOTH);
 
             frame.setVisible(true);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    mainPanel.setDividerLocation(.67);
+                }
+            });
         } catch (Exception e) {
             MyLogger.dump(e, Version.VERSION);
         }
@@ -290,7 +297,8 @@ public class MyPGP {
         for (KeyList list : KeyListDB.getListSet())
             listsBranch.add(mkTreeList(list));
 
-        pubKeyBranch = new DefaultMutableTreeNode(directory.toString());
+//        pubKeyBranch = new DefaultMutableTreeNode(directory.toString());
+        pubKeyBranch = new DefaultMutableTreeNode(Text.get("public_keys"));
         keysTreeRoot.add(pubKeyBranch);
         mkKeyTree(pubKeyBranch, directory, true);
 
@@ -452,26 +460,19 @@ public class MyPGP {
         return null;
     }
 
-    public static Component getPanel() {
-        Preferences preferences = Preferences.userRoot().node("mypgp");
-
-        fch = new MyFileChooser();
-        fch.setPreferences(preferences);
-        String wd = preferences.get("working_dir", null);
-        if (wd != null) {
-            File wdFile = new File(wd);
-            if (wdFile.exists() && wdFile.isDirectory())
-                fch.setDirectory(wdFile);
-        }
-
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    public static void getPanel() {
         processButton = new JButton(Text.get("decrypt_verify"));
         encryptButton = new JButton(Text.get("encrypt_sign"));
-        buttons.add(processButton);
+        JPanel buttons = new JPanel();
+        buttons.add(Box.createHorizontalGlue());
         buttons.add(encryptButton);
+        buttons.add(Box.createHorizontalStrut(10));
+        buttons.add(processButton);
+        buttons.add(Box.createHorizontalGlue());
 
         processButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                getFileChooser();
                 File[] files = fch.getSelectedFiles();
                 if (files == null || files.length == 0)
                     return;
@@ -482,6 +483,7 @@ public class MyPGP {
         });
         encryptButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                getFileChooser();
                 File[] files = fch.getSelectedFiles();
                 if (files == null || files.length == 0)
                     return;
@@ -523,51 +525,30 @@ public class MyPGP {
         keysPanel = new JPanel(new BorderLayout());
         keysPanel.add(new JScrollPane(keysTree));
 
-        JPanel dirPanel = new JPanel(new BorderLayout());
-        JToolBar rightToolBar = new JToolBar();
-        rightToolBar.setFloatable(false);
-        newDirectoryAction = new NewDirectoryAction();
-        rightToolBar.add(newDirectoryAction);
-        rightToolBar.addSeparator(new Dimension(5, 5));
-        refreshAction = new RefreshAction();
-        rightToolBar.add(refreshAction);
-        rightToolBar.addSeparator(new Dimension(5, 5));
-        secureDeleteAction = new SecureDeleteAction();
-        rightToolBar.add(secureDeleteAction);
-        dirPanel.add(rightToolBar, BorderLayout.NORTH);
-        dirPanel.add(fch, BorderLayout.CENTER);
-        dirPanel.add(buttons, BorderLayout.SOUTH);
+        mainPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        mainPanel.setLeftComponent(new JScrollPane(keysPanel));
+        mainPanel.setRightComponent(new JScrollPane(logArea));
+        frame.getContentPane().add(mainPanel);
+        frame.getContentPane().add(buttons, BorderLayout.SOUTH);
+    }
 
-        SpringLayout layout = new SpringLayout();
-        JPanel panel = new JPanel(layout);
-
-        panel.add(keysPanel);
-        SpringLayout.Constraints keysPanelConstraints = layout.getConstraints(keysPanel);
-        keysPanelConstraints.setX(Spring.constant(0));
-        keysPanelConstraints.setY(Spring.constant(0));
-
-        panel.add(dirPanel);
-        SpringLayout.Constraints dirPanelConstraints = layout.getConstraints(dirPanel);
-        dirPanelConstraints.setX(keysPanelConstraints.getConstraint("East"));
-        dirPanelConstraints.setY(Spring.constant(0));
-
-        JScrollPane logAreaPane = new JScrollPane(logArea);
-        panel.add(logAreaPane);
-        SpringLayout.Constraints logAreaConstraints = layout.getConstraints(logAreaPane);
-        logAreaConstraints.setX(dirPanelConstraints.getConstraint("West"));
-        logAreaConstraints.setY(dirPanelConstraints.getConstraint("South"));
-        logAreaConstraints.setWidth(dirPanelConstraints.getWidth());
-
-        Spring totalHeight = Spring.sum(
-                dirPanelConstraints.getHeight(),
-                logAreaConstraints.getHeight());
-        keysPanelConstraints.setHeight(totalHeight);
-
-        SpringLayout.Constraints windowConstraints = layout.getConstraints(panel);
-        windowConstraints.setConstraint("East", dirPanelConstraints.getConstraint("East"));
-        windowConstraints.setConstraint("South", keysPanelConstraints.getConstraint("South"));
-
-        return panel;
+    private static int getFileChooser() {
+        if (fch == null) {
+            Preferences preferences = Preferences.userRoot().node("mypgp");
+            fch = new MyFileChooser();
+            fch.setPreferences(preferences);
+            String wd = preferences.get("working_dir", null);
+            if (wd != null) {
+                File wdFile = new File(wd);
+                if (wdFile.exists() && wdFile.isDirectory())
+                    fch.setDirectory(wdFile);
+            }
+        }
+        return JOptionPane.showConfirmDialog(null,
+                fch, Version.VERSION,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                Icons.getPgpIcon());
     }
 
     private static void decrypt_verify_Selection(File[] files) {
@@ -680,9 +661,9 @@ public class MyPGP {
                     Text.setLocale(pair[0]);
                     Info.saveLanguage();
                     reloadKeys();
-                    newDirectoryAction.putValue(Action.NAME, Text.get("new_directory"));
-                    refreshAction.putValue(Action.NAME, Text.get("refresh"));
-                    secureDeleteAction.putValue(Action.NAME, Text.get("delete"));
+//                    newDirectoryAction.putValue(Action.NAME, Text.get("new_directory"));
+//                    refreshAction.putValue(Action.NAME, Text.get("refresh"));
+//                    secureDeleteAction.putValue(Action.NAME, Text.get("delete"));
                     processButton.setText(Text.get("decrypt_verify"));
                     encryptButton.setText(Text.get("encrypt_sign"));
                     frame.setJMenuBar(getMenuBar());
@@ -850,6 +831,7 @@ public class MyPGP {
 
         public void actionPerformed(ActionEvent event) {
             log1(Text.get("encrypt"));
+            getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;
@@ -867,7 +849,7 @@ public class MyPGP {
 
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("sign");
-
+            getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;
@@ -917,6 +899,7 @@ public class MyPGP {
         }
 
         public void actionPerformed(ActionEvent event) {
+            getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;
@@ -936,6 +919,7 @@ public class MyPGP {
 
         public void actionPerformed(ActionEvent event) {
             log1(Text.get("decrypt_verify"));
+            getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;
@@ -1114,6 +1098,7 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("delete");
             log1(action);
+            getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;

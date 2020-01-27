@@ -24,11 +24,11 @@ public class AlgoPanel2
 
     private final JCheckBox sign;
     private final JTextField signAlgo;
-    private static String selectedSignAlgo = CryptoAlgo.RSA_2048;
+    private static String selectedSignAlgo = CryptoAlgo.RSA_3072;
 
     private final JCheckBox encrypt;
     private final JTextField encryptAlgo;
-    private static String selectedEncryptAlgo = CryptoAlgo.RSA_2048;
+    private static String selectedEncryptAlgo = CryptoAlgo.RSA_3072;
 
     AlgoPanel2() {
         super(new SpringLayout());
