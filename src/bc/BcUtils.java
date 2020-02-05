@@ -1,6 +1,6 @@
 package bc;
 
-import gui.MyPGP;
+import gui.LogWindow;
 import gui.Text;
 import keys.Key;
 import keys.KeyDB2;
@@ -32,7 +32,8 @@ class BcUtils {
                             build(password);
             return pgpSecretKey.extractPrivateKey(decryptor);
         } catch (PGPException e) {
-            MyPGP.log2(Text.get("exception.password_needed"));
+//            MyPGP.log2(Text.get("exception.password_needed"));
+            LogWindow.add(e);
             return null;
         }
     }
@@ -44,7 +45,7 @@ class BcUtils {
         for (; ; ) {
             Object x = pgpObjectFactory.nextObject();
             if (x == null) {
-                log2(String.format("%s: %s", name, Text.get("exception.bad_format")));
+                LogWindow.add(String.format("%s: %s", name, Text.get("exception.bad_format")));
                 return null;
             }
             // the first object might be a PGP marker packet.
@@ -59,16 +60,17 @@ class BcUtils {
         while (it.hasNext()) {
             Object next = it.next();
             if (!(next instanceof PGPPublicKeyEncryptedData)) {
-                MyPGP.log2("unexpected packet: " + next.getClass().getSimpleName());
+//                MyPGP.log2("unexpected packet: " + next.getClass().getSimpleName());
+                LogWindow.add("unexpected packet: " + next.getClass().getSimpleName());
                 continue;
             }
             PGPPublicKeyEncryptedData item = (PGPPublicKeyEncryptedData) next;
             long id = item.getKeyID();
             Key key = KeyDB2.getKey(id);
             if (key == null) {
-                log2(String.format("%s: %s", Text.get("encrypted_for"), Key.mkId8(id)));
+                LogWindow.add(String.format("%s: %s", Text.get("encrypted_for"), Key.mkId8(id)));
             } else {
-                log2(String.format("%s: %s", Text.get("encrypted_for"), key));
+                LogWindow.add(String.format("%s: %s", Text.get("encrypted_for"), key));
                 PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);
                 if (pgpSecretKey != null)
                     list.add(item);
@@ -81,25 +83,25 @@ class BcUtils {
                                 byte[] redBytes)
             throws PGPException {
         if (onePassSignatureList == null || signatureList == null) {
-            log2(Text.get("signers_none"));
+            LogWindow.add(Text.get("signers_none"));
             return;
         }
         if (onePassSignatureList.isEmpty() || signatureList.isEmpty()) {
-            log2(Text.get("signers_none"));
+            LogWindow.add(Text.get("signers_none"));
             return;
         }
 
         PGPOnePassSignature ops = onePassSignatureList.get(0);
         int signAlgo = ops.getKeyAlgorithm();
         int hashAlgo = ops.getHashAlgorithm();
-        log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
 
         Key key = KeyDB2.getKey(ops.getKeyID());
         if (key == null) {
-            log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(ops.getKeyID())));
+            LogWindow.add(String.format("%s: %s", Text.get("signer"), Key.mkId8(ops.getKeyID())));
             return;
         }
-        log2(String.format("%s: %s", Text.get("signer"), key));
+        LogWindow.add(String.format("%s: %s", Text.get("signer"), key));
         PGPPublicKey publicKey = key.getPublicKey();
         ops.init(new JcaPGPContentVerifierBuilderProvider()
                         .setProvider("BC"),
@@ -115,9 +117,9 @@ class BcUtils {
 //                        String userId = (String) userIds.next();
 //                        log2(String.format("%s: %s ", Text.get("signer"), userId));
 //                    }
-            log2(Text.get("signature_ok"));
+            LogWindow.add(Text.get("signature_ok"));
         } else {
-            log2(Text.get("signature_bad"));
+            LogWindow.add(Text.get("signature_bad"));
         }
     }
 
@@ -126,15 +128,8 @@ class BcUtils {
         if (creationTime != null) {
 //            SimpleDateFormat sdf = new SimpleDateFormat("H:mm:ss d.M.yyyy");
             SimpleDateFormat sdf = new SimpleDateFormat("E, d MMM yyyy; H:mm:ss", Text.getLocale());
-            BcUtils.log2(String.format("%s: %s", Text.get("signature"), sdf.format(creationTime)));
+            LogWindow.add(String.format("%s: %s", Text.get("signature"), sdf.format(creationTime)));
         }
     }
 
-    static void log1(String msg) {
-        MyPGP.log1(msg);
-    }
-
-    static void log2(String msg) {
-        MyPGP.log2(msg);
-    }
 }

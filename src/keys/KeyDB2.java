@@ -1,6 +1,6 @@
 package keys;
 
-import gui.MyPGP;
+import gui.LogWindow;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 
@@ -80,8 +80,7 @@ public class KeyDB2 {
     }
 
     static void saveKeys(PrintWriter writer) {
-        Set<Key> unique = new HashSet<>();
-        unique.addAll(keys.values());
+        Set<Key> unique = new HashSet<>(keys.values());
         for (Key key : unique) {
             if (key.hasAlias())
                 writer.printf("alias.%s= %s%n", key.getKid(), key.getAlias());
@@ -91,7 +90,8 @@ public class KeyDB2 {
     static Key store(PGPPublicKey masterKey, PGPPublicKey publicKey) {
         publicKeys.put(publicKey.getKeyID(), publicKey);
         if (masterKey == null) {
-            MyPGP.log("no master key for " + publicKey);
+//            MyPGP.log("no master key for " + publicKey);
+            LogWindow.add("no master key for " + publicKey);
             return null;
         }
 
@@ -110,7 +110,8 @@ public class KeyDB2 {
     static Key store(PGPSecretKey masterKey, PGPSecretKey secretKey) {
         secretKeys.put(secretKey.getKeyID(), secretKey);
         if (masterKey == null) {
-            MyPGP.log("no master key for " + secretKey);
+//            MyPGP.log("no master key for " + secretKey);
+            LogWindow.add("no master key for " + secretKey);
             return null;
         }
 

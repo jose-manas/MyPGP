@@ -2,7 +2,7 @@ package bc;
 
 import crypto.GetPassword;
 import exception.PasswordCancelled;
-import gui.MyPGP;
+import gui.LogWindow;
 import gui.Text;
 import gui.Version;
 import keys.Key;
@@ -33,7 +33,8 @@ public class BcUtilsClipboard {
     public static String encrypt(String redText, List<Key> publicKeys)
             throws IOException, PGPException {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+//        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
         boolean armor = true;
@@ -116,7 +117,11 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.log2(String.format("%s: %s(%s)",
+//        MyPGP.log2(String.format("%s: %s(%s)",
+//                signerKey,
+//                ToString.publicKey(signAlgo),
+//                ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -157,7 +162,11 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.log2(String.format("%s: %s(%s)",
+//        MyPGP.log2(String.format("%s: %s(%s)",
+//                signerKey,
+//                ToString.publicKey(signAlgo),
+//                ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -203,7 +212,8 @@ public class BcUtilsClipboard {
     public static String encrypt_sign(String redText, List<Key> publicKeys, Key signerKey, char[] password)
             throws IOException, PGPException {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+//        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
         PGPSecretKey signingKey = signerKey.getSigningKey();
@@ -243,7 +253,11 @@ public class BcUtilsClipboard {
 
         int signAlgo = publicKey.getAlgorithm();
         int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-        MyPGP.log2(String.format("%s: %s(%s)",
+//        MyPGP.log2(String.format("%s: %s(%s)",
+//                signerKey,
+//                ToString.publicKey(signAlgo),
+//                ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)",
                 signerKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
@@ -284,8 +298,10 @@ public class BcUtilsClipboard {
 
     private static String decrypt(String blackText)
             throws IOException, PasswordCancelled, PGPException {
-        BcUtils.log1(String.format("%s(%s)",
-                Text.get("decrypt"), Text.get("clipboard")));
+//        BcUtils.log1(String.format("%s(%s)",
+//                Text.get("decrypt"), Text.get("clipboard")));
+        LogWindow.openItem(Text.get("decrypt"));
+        LogWindow.add(Text.get("clipboard"));
 
         byte[] blackBytes = blackText.getBytes("UTF-8");
         InputStream is = CRLF.sanitize(new ByteArrayInputStream(blackBytes));
@@ -295,7 +311,8 @@ public class BcUtilsClipboard {
 
         List<PGPPublicKeyEncryptedData> list = BcUtils.getKnownKeyEncryptedData(encryptedDataList);
         if (list.size() == 0) {
-            BcUtils.log2(Text.get("no_known_key"));
+//            BcUtils.log2(Text.get("no_known_key"));
+            LogWindow.add(Text.get("no_known_key"));
             return blackText;
         }
 
@@ -316,7 +333,7 @@ public class BcUtilsClipboard {
                 break;
         }
         if (sKey == null) {
-            BcUtils.log2(Text.get("no_known_key"));
+            LogWindow.add(Text.get("no_known_key"));
             return "";
         }
 
@@ -328,7 +345,8 @@ public class BcUtilsClipboard {
                         .setProvider("BC")
                         .build(sKey);
         int encryptAlgo = pbe.getSymmetricAlgorithm(factory);
-        MyPGP.log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+//        MyPGP.log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        LogWindow.add(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         InputStream clear = pbe.getDataStream(factory);
         PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(clear);
 
@@ -355,7 +373,7 @@ public class BcUtilsClipboard {
         byte[] redBytes = redData.toByteArray();
 
         if (pbe.isIntegrityProtected() && !pbe.verify())
-            BcUtils.log2("integrity check fails");
+            LogWindow.add("integrity check fails");
 
         BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
 
@@ -374,15 +392,15 @@ public class BcUtilsClipboard {
         PGPSignature signature = p3.get(0);
         int signAlgo = signature.getKeyAlgorithm();
         int hashAlgo = signature.getHashAlgorithm();
-        BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getKey(signature.getKeyID());
         if (key == null) {
-            BcUtils.log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
+            LogWindow.add(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
             return blackText;
         }
-        BcUtils.log2(String.format("%s: %s", Text.get("signer"), key));
+        LogWindow.add(String.format("%s: %s", Text.get("signer"), key));
 
         PGPPublicKey publicKey = key.getPublicKey();
         signature.init(
@@ -400,9 +418,9 @@ public class BcUtilsClipboard {
         }
 
         if (signature.verify())
-            BcUtils.log2(Text.get("signature_ok"));
+            LogWindow.add(Text.get("signature_ok"));
         else
-            BcUtils.log2(Text.get("signature_bad"));
+            LogWindow.add(Text.get("signature_bad"));
 
         String nl = System.getProperty("line.separator");
         StringBuilder redText = new StringBuilder();
@@ -463,7 +481,7 @@ public class BcUtilsClipboard {
                 return verify(blackText);
             }
             if (x == null) {
-                BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), Text.get("exception.bad_format")));
+                LogWindow.add(String.format("%s: %s", Text.get("clipboard"), Text.get("exception.bad_format")));
                 return "";
             }
             if (x instanceof PGPCompressedData) {
@@ -480,8 +498,8 @@ public class BcUtilsClipboard {
             return verify(blackText);
 
         if (x instanceof PGPOnePassSignatureList) {
-            BcUtils.log1(String.format("%s(%s) :",
-                    Text.get("signature"), Text.get("clipboard")));
+            LogWindow.add(String.format("%s(%s) :",
+                        Text.get("signature"), Text.get("clipboard")));
             PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) x;
 
             PGPLiteralData literalData = (PGPLiteralData) pgpObjectFactory.nextObject();
@@ -494,9 +512,9 @@ public class BcUtilsClipboard {
 
             if (filename != null) {
                 if (date == null || date.getTime() == 0)
-                    BcUtils.log2("-> " + filename);
+                    LogWindow.add("-> " + filename);
                 else
-                    BcUtils.log2(String.format("-> %s (%tF)", filename, date));
+                    LogWindow.add(String.format("-> %s (%tF)", filename, date));
             }
 
             PGPSignatureList signatureList = (PGPSignatureList) pgpObjectFactory.nextObject();
@@ -506,21 +524,21 @@ public class BcUtilsClipboard {
         }
 
         if (x instanceof PGPPublicKey)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
         else if (x instanceof PGPPublicKeyRing)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
         else if (x instanceof PGPPublicKeyRingCollection)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
 
         else if (x instanceof PGPSecretKey)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
         else if (x instanceof PGPSecretKeyRing)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
         else if (x instanceof PGPSecretKeyRingCollection)
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
 
         else
-            BcUtils.log2(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
+            LogWindow.add(String.format("%s: %s", Text.get("clipboard"), x.getClass().getSimpleName()));
 
         return "";
     }

@@ -2,10 +2,7 @@ package bc;
 
 import crypto.GetPassword;
 import exception.PasswordCancelled;
-import gui.FilePanel;
-import gui.MyPGP;
-import gui.Text;
-import gui.Version;
+import gui.*;
 import gui.imgs.Icons;
 import keys.Key;
 import keys.KeyDB2;
@@ -42,7 +39,7 @@ public class BcUtilsFiles {
     public static void encrypt(File redFile, List<Key> publicKeys, boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
 //        boolean armor = true;
@@ -133,10 +130,10 @@ public class BcUtilsFiles {
         ) {
             int signAlgo = publicKey.getAlgorithm();
             int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-            MyPGP.log2(String.format("%s: %s(%s)",
-                    Text.get("sign"),
-                    ToString.publicKey(signAlgo),
-                    ToString.hash(hashAlgo)));
+            LogWindow.add(String.format("%s: %s(%s)",
+                        Text.get("sign"),
+                        ToString.publicKey(signAlgo),
+                        ToString.hash(hashAlgo)));
 
             JcaPGPContentSignerBuilder contentSignerBuilder =
                     new JcaPGPContentSignerBuilder(signAlgo, hashAlgo)
@@ -206,10 +203,10 @@ public class BcUtilsFiles {
 
                 int signAlgo = publicKey.getAlgorithm();
                 int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                MyPGP.log2(String.format("%s: %s(%s)",
-                        Text.get("sign"),
-                        ToString.publicKey(signAlgo),
-                        ToString.hash(hashAlgo)));
+                LogWindow.add(String.format("%s: %s(%s)",
+                                Text.get("sign"),
+                                ToString.publicKey(signAlgo),
+                                ToString.hash(hashAlgo)));
 
                 JcaPGPContentSignerBuilder contentSignerBuilder =
                         new JcaPGPContentSignerBuilder(signAlgo, hashAlgo)
@@ -250,7 +247,7 @@ public class BcUtilsFiles {
                                     boolean armor)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
-        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
 
 //        boolean armor = true;
@@ -314,10 +311,10 @@ public class BcUtilsFiles {
 
                     int signAlgo = publicKey.getAlgorithm();
                     int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                    MyPGP.log2(String.format("%s: %s(%s)",
-                            Text.get("sign"),
-                            ToString.publicKey(signAlgo),
-                            ToString.hash(hashAlgo)));
+                    LogWindow.add(String.format("%s: %s(%s)",
+                                        Text.get("sign"),
+                                        ToString.publicKey(signAlgo),
+                                        ToString.hash(hashAlgo)));
 
                     JcaPGPContentSignerBuilder contentSignerBuilder =
                             new JcaPGPContentSignerBuilder(signAlgo, hashAlgo)
@@ -364,7 +361,7 @@ public class BcUtilsFiles {
 
     private static void decrypt(File redFile, File blackFile, Map<Long, char[]> passwords)
             throws IOException, PasswordCancelled, PGPException {
-        BcUtils.log1(String.format("%s(%s) --> %s",
+        LogWindow.add(String.format("%s(%s) --> %s",
                 Text.get("decrypt"), blackFile.getName(), redFile.getName()));
         if (blackFile.length() == 0)
             return;
@@ -375,7 +372,7 @@ public class BcUtilsFiles {
 
             List<PGPPublicKeyEncryptedData> list = BcUtils.getKnownKeyEncryptedData(encryptedDataList);
             if (list.size() == 0) {
-                BcUtils.log2(Text.get("no_known_key"));
+                LogWindow.add(Text.get("no_known_key"));
                 return;
             }
 
@@ -399,7 +396,7 @@ public class BcUtilsFiles {
                     break;
             }
             if (sKey == null) {
-                BcUtils.log2(Text.get("no_known_key"));
+                LogWindow.add(Text.get("no_known_key"));
                 return;
             }
 
@@ -411,7 +408,7 @@ public class BcUtilsFiles {
                             .setProvider("BC")
                             .build(sKey);
             int encryptAlgo = pbe.getSymmetricAlgorithm(factory);
-            MyPGP.log2(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+            LogWindow.add(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
             try (InputStream clear = pbe.getDataStream(factory)) {
                 PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(clear);
 
@@ -439,7 +436,7 @@ public class BcUtilsFiles {
                 }
 
                 if (pbe.isIntegrityProtected() && !pbe.verify())
-                    BcUtils.log2("integrity check fails");
+                    LogWindow.add("integrity check fails");
 
                 try (OutputStream redOs = new BufferedOutputStream(new FileOutputStream(redFile))) {
                     redOs.write(redBytes);
@@ -495,15 +492,15 @@ public class BcUtilsFiles {
             throws PGPException, IOException {
         int hashAlgo = signature.getHashAlgorithm();
         int signAlgo = signature.getKeyAlgorithm();
-        BcUtils.log2(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getKey(signature.getKeyID());
         if (key == null) {
-            BcUtils.log2(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
+            LogWindow.add(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
             return;
         }
-        BcUtils.log2(String.format("%s: %s", Text.get("signer"), key));
+        LogWindow.add(String.format("%s: %s", Text.get("signer"), key));
 
         PGPPublicKey publicKey = key.getPublicKey();
         signature.init(
@@ -520,9 +517,9 @@ public class BcUtilsFiles {
             }
         }
         if (signature.verify())
-            BcUtils.log2(Text.get("signature_ok"));
+            LogWindow.add(Text.get("signature_ok"));
         else
-            BcUtils.log2(Text.get("signature_bad"));
+            LogWindow.add(Text.get("signature_bad"));
     }
 
     /**
@@ -551,9 +548,9 @@ public class BcUtilsFiles {
                     x = null;
                 }
                 if (x == null) {
-                    BcUtils.log1(String.format("%s(%s) :",
-                            Text.get("process"), blackFile.getName()));
-                    BcUtils.log2(String.format("%s: %s", blackFile.getName(), Text.get("exception.bad_format")));
+                    LogWindow.add(String.format("%s(%s) :",
+                                        Text.get("process"), blackFile.getName()));
+                    LogWindow.add(String.format("%s: %s", blackFile.getName(), Text.get("exception.bad_format")));
                     return;
                 }
                 if (x instanceof PGPCompressedData) {
@@ -574,18 +571,18 @@ public class BcUtilsFiles {
             if (x instanceof PGPSignatureList) {
                 File redFile = getRedFile(Text.get("process"), blackFile);
                 String filenameString = redFile == null ? "no" : redFile.getName();
-                BcUtils.log1(String.format("%s == %s(%s) :",
-                        blackFile.getName(), Text.get("signature"), filenameString));
+                LogWindow.add(String.format("%s == %s(%s) :",
+                                blackFile.getName(), Text.get("signature"), filenameString));
                 if (redFile == null)
-                    BcUtils.log2(String.format("%s: %s", blackFile.getName(), Text.get("no_signed_file")));
+                    LogWindow.add(String.format("%s: %s", blackFile.getName(), Text.get("no_signed_file")));
                 else
                     verify((PGPSignatureList) x, redFile);
                 return;
             }
 
             if (x instanceof PGPOnePassSignatureList) {
-                BcUtils.log1(String.format("%s(%s) :",
-                        Text.get("signature"), blackFile.getName()));
+                LogWindow.add(String.format("%s(%s) :",
+                                Text.get("signature"), blackFile.getName()));
                 PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) x;
 
                 PGPLiteralData literalData = (PGPLiteralData) pgpObjectFactory.nextObject();
@@ -595,9 +592,9 @@ public class BcUtilsFiles {
 
                 if (filename != null) {
                     if (date == null || date.getTime() == 0)
-                        BcUtils.log2("-> " + filename);
+                        LogWindow.add("-> " + filename);
                     else
-                        BcUtils.log2(String.format("-> %s (%tF)", filename, date));
+                        LogWindow.add(String.format("-> %s (%tF)", filename, date));
                     File redFile = new File(blackFile.getParent(), filename);
                     if (redFile.exists())
                         redFile = new File(blackFile.getParent(), "mypgp.out");
@@ -612,21 +609,21 @@ public class BcUtilsFiles {
             }
 
             if (x instanceof PGPPublicKey)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPPublicKeyRing)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPPublicKeyRingCollection)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
 
             else if (x instanceof PGPSecretKey)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPSecretKeyRing)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPSecretKeyRingCollection)
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
 
             else
-                BcUtils.log2(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
         }
     }
 
