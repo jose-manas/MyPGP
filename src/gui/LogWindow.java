@@ -46,9 +46,8 @@ public class LogWindow {
 
     public static void print(Item item) {
         init();
-        if (item.command != null) {
+        if (item.command != null)
             LOG_AREA.append(String.format("%s\n", item.command));
-        }
         if (item.publicKeyList.size() > 0) {
             LOG_AREA.append(String.format("  %s\n", Text.get("public_keys")));
             for (Key key: item.publicKeyList)
@@ -59,9 +58,8 @@ public class LogWindow {
             for (Key key: item.secretKeyList)
                 LOG_AREA.append(String.format("    %s\n", key.toString()));
         }
-        for (String s: item.textList) {
+        for (String s: item.textList)
             LOG_AREA.append(String.format("  %s\n", s));
-        }
         LOG_AREA.append("\n");
         LOG_AREA.setCaretPosition(LOG_AREA.getDocument().getLength());
     }
@@ -136,6 +134,13 @@ public class LogWindow {
 
         public void add(String text) {
             textList.add(text);
+        }
+
+        public String toString() {
+            if (command != null)
+                return command;
+            else
+                return "no command";
         }
     }
 }

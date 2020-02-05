@@ -201,11 +201,9 @@ public class MyPGP {
         keysTree.setCellRenderer(new MyTreeRenderer(selection));
         keysTree.addMouseListener(new MyMouseListener(keysTree, selection));
 //            expandAll(keysTree);
-        for (Component component : keysPanel.getComponents()) {
-            if (component instanceof JScrollPane)
-                keysPanel.remove(component);
-        }
-        keysPanel.add(new JScrollPane(keysTree));
+        frame.getContentPane().remove(keysPanel);
+        keysPanel= new JScrollPane(keysTree);
+        frame.getContentPane().add(keysPanel);
         if (secKeysExpanded)
             keysTree.expandPath(new TreePath(secKeyBranch.getPath()));
         if (listsExpanded)
@@ -216,7 +214,7 @@ public class MyPGP {
         expandKeyDirectories(expandedSecretKeys, secKeyBranch);
         expandKeyDirectories(expandedPublicKeys, pubKeyBranch);
 
-        keysPanel.revalidate();
+        frame.revalidate();
     }
 
     private static Set<Directory> getExpandedDirectories(DefaultMutableTreeNode branch) {
@@ -1171,7 +1169,6 @@ public class MyPGP {
                     panel.getPassword());
             KeyGeneratingWorker worker = new KeyGeneratingWorker(task);
             worker.execute();
-            LogWindow.closeItem();
         }
     }
 
@@ -1183,7 +1180,6 @@ public class MyPGP {
             if (executionException != null)
                 throw executionException;
             LogWindow.add(task.getResult());
-            reloadKeys();
         } catch (Exception e) {
             if (e instanceof PGPException) {
                 PGPException pgpException = (PGPException) e;
@@ -1195,6 +1191,7 @@ public class MyPGP {
             }
         }
         LogWindow.closeItem();
+        reloadKeys();
     }
 
     static class AliasKeyAction
