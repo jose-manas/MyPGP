@@ -51,12 +51,12 @@ public class LogWindow {
         if (item.publicKeyList.size() > 0) {
             LOG_AREA.append(String.format("  %s\n", Text.get("public_keys")));
             for (Key key: item.publicKeyList)
-                LOG_AREA.append(String.format("    %s\n", key.toString()));
+                LOG_AREA.append(String.format("    > %s\n", key.toString()));
         }
         if (item.secretKeyList.size() > 0) {
             LOG_AREA.append(String.format("  %s\n", Text.get("secret_keys")));
             for (Key key: item.secretKeyList)
-                LOG_AREA.append(String.format("    %s\n", key.toString()));
+                LOG_AREA.append(String.format("    > %s\n", key.toString()));
         }
         for (String s: item.textList)
             LOG_AREA.append(String.format("  %s\n", s));

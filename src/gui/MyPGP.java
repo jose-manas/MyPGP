@@ -522,6 +522,7 @@ public class MyPGP {
                     fch.setDirectory(wdFile);
             }
         }
+        fch.rescanCurrentDirectory();
         return JOptionPane.showConfirmDialog(null,
                 fch, Version.VERSION,
                 JOptionPane.OK_CANCEL_OPTION,
@@ -561,7 +562,8 @@ public class MyPGP {
         if (signingKeys.size() > 0) {
             try {
                 for (Key signingKey : signingKeys) {
-                    char[] password = GetPassword.getInstance().getDecryptionPassword(signingKey.toString());
+                    String label = Text.get("sign") + ": " + signingKey;
+                    char[] password = GetPassword.getInstance().getDecryptionPassword(label);
                     passwords.put(signingKey, password);
                 }
             } catch (PasswordCancelled passwordCancelled) {
@@ -825,7 +827,8 @@ public class MyPGP {
                 try {
                     armor = ArmorPanel.getArmor(action, false, ".sig");
                     for (Key signingKey : signingKeys) {
-                        char[] password = GetPassword.getInstance().getDecryptionPassword(signingKey.toString());
+                        String label = action + ": " + signingKey;
+                        char[] password = GetPassword.getInstance().getDecryptionPassword(label);
                         passwords.put(signingKey, password);
                     }
                 } catch (PasswordCancelled passwordCancelled) {
@@ -928,15 +931,15 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("encrypt");
 
-            LogWindow.openItem(action);
-            LogWindow.add(Text.get("clipboard"));
             List<Key> encryptingKeys = getEncryptingKeys();
             if (encryptingKeys.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("public_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
                 LogWindow.closeItem();
                 return;
             }
 
+            LogWindow.openItem(action);
+            LogWindow.add(Text.get("clipboard"));
             try {
                 String redText = MyClipBoard.readString();
                 String blackText = BcUtilsClipboard.encrypt(redText, encryptingKeys);
@@ -972,7 +975,8 @@ public class MyPGP {
             Key signingKey = signingKeys.get(0);
             try {
                 String redText = MyClipBoard.readString();
-                char[] password = GetPassword.getInstance().getDecryptionPassword(action);
+                String label = action + ": " + signingKey;
+                char[] password = GetPassword.getInstance().getDecryptionPassword(label);
                 String blackText = BcUtilsClipboard.clearsign(redText, signingKey, password);
                 MyClipBoard.write(blackText);
             } catch (PasswordCancelled ignored) {
@@ -1014,7 +1018,8 @@ public class MyPGP {
             if (signingKeys.size() > 0) {
                 try {
                     signingKey = signingKeys.get(0);
-                    password = GetPassword.getInstance().getDecryptionPassword(Text.get("sign"));
+                    String label = Text.get("sign") + ": " + signingKey;
+                    password = GetPassword.getInstance().getDecryptionPassword(label);
                 } catch (PasswordCancelled passwordCancelled) {
                     return;
                 }
@@ -1207,8 +1212,8 @@ public class MyPGP {
             List<Key> secretKeys = getSecretKeys(checked);
             List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("public_keys")));
-                LogWindow.add(String.format("%s: 0%n", Text.get("secret_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("secret_keys")));
                 return;
             }
 
@@ -1246,8 +1251,8 @@ public class MyPGP {
             List<Key> secretKeys = getSecretKeys(checked);
             List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("public_keys")));
-                LogWindow.add(String.format("%s: 0%n", Text.get("secret_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("secret_keys")));
                 return;
             }
 
@@ -1275,18 +1280,18 @@ public class MyPGP {
         }
 
         public void actionPerformed(ActionEvent event) {
-            LogWindow.openItem(Text.get("export"));
             List<Key> secretKeys = getSecretKeys(checked);
             List<Key> publicKeys = getPublicKeys(checked);
             if (secretKeys.size() == 0 && publicKeys.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("public_keys")));
-                LogWindow.add(String.format("%s: 0%n", Text.get("secret_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("secret_keys")));
                 return;
             }
             File where = getFile();
             if (where == null)
                 return;
 
+            LogWindow.openItem(Text.get("export"));
             for (Key key : secretKeys) {
                 LogWindow.addSecret(key);
                 KeySaver.exportSecretKey(where, key);
@@ -1353,13 +1358,13 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             List<Key> publicKeys = getPublicKeys(checked);
             if (publicKeys.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("public_keys")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
                 return;
             }
 
             List<DefaultMutableTreeNode> listNodes = getLists(checked);
             if (listNodes.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("lists")));
+                LogWindow.log(String.format("%s: 0%n", Text.get("lists")));
                 return;
             }
 
@@ -1474,7 +1479,7 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             List<DefaultMutableTreeNode> listNodes = getLists(checked);
             if (listNodes.size() == 0) {
-                LogWindow.add(String.format("%s: 0%n", Text.get("lists")));
+                LogWindow.log(String.format("%s: 0%n%n", Text.get("lists")));
                 return;
             }
 

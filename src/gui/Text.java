@@ -100,7 +100,7 @@ public class Text {
         dictionary.put("overwrite", "overwrite");
         dictionary.put("password", "password");
         dictionary.put("process", "process");
-        dictionary.put("public_keys", "public keys (decrypt | verify signature)");
+        dictionary.put("public_keys", "public keys (encrypt | verify signature)");
         dictionary.put("refresh", "refresh");
         dictionary.put("remove", "remove");
         dictionary.put("remove_key_list", "remove key(s) from list(s)");
