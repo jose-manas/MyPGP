@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -50,15 +51,15 @@ public class LogWindow {
             LOG_AREA.append(String.format("%s\n", item.command));
         if (item.publicKeyList.size() > 0) {
             LOG_AREA.append(String.format("  %s\n", Text.get("public_keys")));
-            for (Key key: item.publicKeyList)
+            for (Key key : item.publicKeyList)
                 LOG_AREA.append(String.format("    > %s\n", key.toString()));
         }
         if (item.secretKeyList.size() > 0) {
             LOG_AREA.append(String.format("  %s\n", Text.get("secret_keys")));
-            for (Key key: item.secretKeyList)
+            for (Key key : item.secretKeyList)
                 LOG_AREA.append(String.format("    > %s\n", key.toString()));
         }
-        for (String s: item.textList)
+        for (String s : item.textList)
             LOG_AREA.append(String.format("  %s\n", s));
         LOG_AREA.append("\n");
         LOG_AREA.setCaretPosition(LOG_AREA.getDocument().getLength());
@@ -89,14 +90,14 @@ public class LogWindow {
 
     public static void addPublic(Key key) {
         if (item == null)
-            item= new Item();
-            item.addPublic(key);
+            item = new Item();
+        item.addPublic(key);
     }
 
     public static void addSecret(Key key) {
         if (item == null)
-            item= new Item();
-            item.addSecret(key);
+            item = new Item();
+        item.addSecret(key);
     }
 
     public static void add(String s) {
@@ -110,6 +111,42 @@ public class LogWindow {
         add(e.toString());
     }
 
+    public static void signature(boolean verify, Key signer, File file) {
+        String message = verify ? Text.get("signature_ok") : Text.get("signature_bad");
+        LogWindow.add(message);
+
+        JLabel label = new JLabel();
+        label.setOpaque(true);
+        label.setBackground(verify ? Color.GREEN : Color.RED);
+        label.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        JDialog dialog = new JDialog(MyPGP.getWindow());
+        if (file == null) {
+            dialog.setTitle(Text.get("clipboard"));
+            label.setText(String.format("<html><p align=\"center\">%s<br><br>%s",
+                    message, escapeHTML(signer.toString())));
+        } else {
+            dialog.setTitle(message);
+            label.setText(String.format("<html><p align=\"center\">%s<br><br>%s",
+                    file.getName(), escapeHTML(signer.toString())));
+        }
+        dialog.add(label);
+        dialog.pack();
+        dialog.setLocationRelativeTo(MyPGP.getWindow());
+        dialog.setVisible(true);
+    }
+
+    private static String escapeHTML(String s) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c > 127 || c == '"' || c == '<' || c == '>' || c == '&')
+                out.append("&#").append((int) c).append(';');
+            else
+                out.append(c);
+        }
+        return out.toString();
+    }
+
     public static class Item {
         private final String command;
         private java.util.List<Key> publicKeyList = new ArrayList<>();
@@ -121,7 +158,7 @@ public class LogWindow {
         }
 
         public Item() {
-            this.command= null;
+            this.command = null;
         }
 
         public void addPublic(Key key) {

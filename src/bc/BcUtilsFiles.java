@@ -442,7 +442,7 @@ public class BcUtilsFiles {
                     redOs.write(redBytes);
                 }
 
-                BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
+                BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes, redFile);
             }
         }
     }
@@ -516,10 +516,11 @@ public class BcUtilsFiles {
                 signature.update(buffer, 0, n);
             }
         }
-        if (signature.verify())
-            LogWindow.add(Text.get("signature_ok"));
-        else
-            LogWindow.add(Text.get("signature_bad"));
+//        if (signature.verify())
+//            LogWindow.add(Text.get("signature_ok"));
+//        else
+//            LogWindow.add(Text.get("signature_bad"));
+        LogWindow.signature(signature.verify(), key, redFile);
     }
 
     /**
@@ -604,7 +605,7 @@ public class BcUtilsFiles {
                 }
 
                 PGPSignatureList signatureList = (PGPSignatureList) pgpObjectFactory.nextObject();
-                BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
+                BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes, blackFile);
                 return;
             }
 

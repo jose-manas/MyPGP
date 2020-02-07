@@ -4,6 +4,7 @@ import exception.MyLogger;
 import gui.Text;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.prefs.Preferences;
 
 /**
@@ -30,7 +31,7 @@ public class Info {
             if (!database.exists())
                 return;
             InputStream is = new FileInputStream(database);
-            reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             for (; ; ) {
                 String line = reader.readLine();
                 if (line == null)
@@ -88,7 +89,7 @@ public class Info {
         try {
             File configuration = new File(home, DATABASE_MYPGP);
             OutputStream os = new FileOutputStream(configuration);
-            writer = new PrintWriter(new OutputStreamWriter(os, "UTF-8"));
+            writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
             KeyDB2.saveKeys(writer);
             KeyListDB.saveLists(writer);
         } catch (Exception e) {

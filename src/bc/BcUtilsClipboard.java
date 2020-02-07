@@ -16,6 +16,7 @@ import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class BcUtilsClipboard {
 
         boolean armor = true;
         boolean withIntegrityCheck = true;
-        byte[] redBytes = redText.getBytes("UTF-8");
+        byte[] redBytes = redText.getBytes(StandardCharsets.UTF_8);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream out = baos;
@@ -93,7 +94,7 @@ public class BcUtilsClipboard {
             throws IOException, PGPException {
         boolean armor = true;
 
-        byte[] redBytes = redText.getBytes("UTF-8");
+        byte[] redBytes = redText.getBytes(StandardCharsets.UTF_8);
 
         PGPSecretKey secretKey = signerKey.getSigningKey();
         PGPPublicKey publicKey = secretKey.getPublicKey();
@@ -192,7 +193,7 @@ public class BcUtilsClipboard {
         for (int i = 0; i < nlines; i++) {
             String line = lines.get(i);
             line += "\r\n";
-            byte[] redBytes = line.getBytes("UTF-8");
+            byte[] redBytes = line.getBytes(StandardCharsets.UTF_8);
             aos.write(redBytes);
             if (i < nlines - 1)
                 signatureGenerator.update(redBytes);
@@ -224,7 +225,7 @@ public class BcUtilsClipboard {
 
         boolean armor = true;
         boolean withIntegrityCheck = true;
-        byte[] redBytes = redText.getBytes("UTF-8");
+        byte[] redBytes = redText.getBytes(StandardCharsets.UTF_8);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream out = baos;
@@ -303,7 +304,7 @@ public class BcUtilsClipboard {
         LogWindow.openItem(Text.get("decrypt"));
         LogWindow.add(Text.get("clipboard"));
 
-        byte[] blackBytes = blackText.getBytes("UTF-8");
+        byte[] blackBytes = blackText.getBytes(StandardCharsets.UTF_8);
         InputStream is = CRLF.sanitize(new ByteArrayInputStream(blackBytes));
         PGPEncryptedDataList encryptedDataList = BcUtils.getEncryptedDataList(is, Text.get("clipboard"));
         if (encryptedDataList == null)
@@ -375,14 +376,14 @@ public class BcUtilsClipboard {
         if (pbe.isIntegrityProtected() && !pbe.verify())
             LogWindow.add("integrity check fails");
 
-        BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
+        BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes, null);
 
-        return new String(redBytes, "UTF-8");
+        return new String(redBytes, StandardCharsets.UTF_8);
     }
 
     public static String verify(String blackText)
             throws IOException, PGPException {
-        byte[] blackBytes = blackText.getBytes("UTF-8");
+        byte[] blackBytes = blackText.getBytes(StandardCharsets.UTF_8);
         InputStream is = new ByteArrayInputStream(blackBytes);
         ArmoredInputStream in = new ArmoredInputStream(is);
         List<byte[]> lines = readLines(in);
@@ -417,15 +418,16 @@ public class BcUtilsClipboard {
             }
         }
 
-        if (signature.verify())
-            LogWindow.add(Text.get("signature_ok"));
-        else
-            LogWindow.add(Text.get("signature_bad"));
+//        if (signature.verify())
+//            LogWindow.add(Text.get("signature_ok"));
+//        else
+//            LogWindow.add(Text.get("signature_bad"));
+        LogWindow.signature(signature.verify(), key, null);
 
         String nl = System.getProperty("line.separator");
         StringBuilder redText = new StringBuilder();
         for (byte[] line : lines) {
-            redText.append(new String(line, "UTF-8"));
+            redText.append(new String(line, StandardCharsets.UTF_8));
             redText.append(nl);
         }
         return redText.toString();
@@ -468,7 +470,7 @@ public class BcUtilsClipboard {
 
     public static String process(String blackText)
             throws IOException, PasswordCancelled, PGPException, SignatureException {
-        byte[] blackBytes = blackText.getBytes("UTF-8");
+        byte[] blackBytes = blackText.getBytes(StandardCharsets.UTF_8);
 
         InputStream is = CRLF.sanitize(new ByteArrayInputStream(blackBytes));
         InputStream decoderStream = PGPUtil.getDecoderStream(is);
@@ -518,9 +520,9 @@ public class BcUtilsClipboard {
             }
 
             PGPSignatureList signatureList = (PGPSignatureList) pgpObjectFactory.nextObject();
-            BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes);
+            BcUtils.verifySignature(onePassSignatureList, signatureList, redBytes, null);
 
-            return new String(redBytes, "UTF-8");
+            return new String(redBytes, StandardCharsets.UTF_8);
         }
 
         if (x instanceof PGPPublicKey)

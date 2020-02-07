@@ -11,6 +11,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -80,7 +81,7 @@ class BcUtils {
     }
 
     static void verifySignature(PGPOnePassSignatureList onePassSignatureList, PGPSignatureList signatureList,
-                                byte[] redBytes)
+                                byte[] redBytes, File file)
             throws PGPException {
         if (onePassSignatureList == null || signatureList == null) {
             LogWindow.add(Text.get("signers_none"));
@@ -111,16 +112,11 @@ class BcUtils {
         PGPSignature signature = signatureList.get(0);
         logSignTime(signature);
 
-        if (ops.verify(signature)) {
-//                    Iterator<?> userIds = publicKey.getUserIDs();
-//                    while (userIds.hasNext()) {
-//                        String userId = (String) userIds.next();
-//                        log2(String.format("%s: %s ", Text.get("signer"), userId));
-//                    }
-            LogWindow.add(Text.get("signature_ok"));
-        } else {
-            LogWindow.add(Text.get("signature_bad"));
-        }
+//        if (ops.verify(signature))
+//            LogWindow.add(Text.get("signature_ok"));
+//        else
+//            LogWindow.add(Text.get("signature_bad"));
+        LogWindow.signature(ops.verify(signature), key, file);
     }
 
     static void logSignTime(PGPSignature signature) {
