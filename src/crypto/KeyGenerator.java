@@ -1,7 +1,8 @@
 package crypto;
 
+import bc.KeySaver;
 import gui.ThreadUtilities;
-import gui.Version;
+import keys.Key;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -192,7 +193,7 @@ public class KeyGenerator {
             pubFile = new File(directory, filename + "_pub.asc");
             FileOutputStream fos = new FileOutputStream(pubFile);
             ArmoredOutputStream aos = new ArmoredOutputStream(fos);
-            aos.setHeader("Comment", Version.VERSION);
+            KeySaver.addComments(aos, new Key(pkr.getPublicKey()));
             pkr.encode(aos);
             aos.close();
             fos.close();
@@ -203,7 +204,7 @@ public class KeyGenerator {
             File secFile = new File(directory, filename + "_sec.asc");
             FileOutputStream fos = new FileOutputStream(secFile);
             ArmoredOutputStream aos = new ArmoredOutputStream(fos);
-            aos.setHeader("Comment", Version.VERSION);
+            KeySaver.addComments(aos, new Key(skr.getPublicKey()));
             skr.encode(aos);
             aos.close();
             fos.close();

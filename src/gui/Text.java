@@ -116,6 +116,7 @@ public class Text {
         dictionary.put("signers_none", "no signers");
         dictionary.put("size", "size");
         dictionary.put("skip", "skip");
+        dictionary.put("split", "split key ring");
         dictionary.put("text", "text");
         dictionary.put("unknown", "unknown");
         dictionary.put("verify", "verify");
@@ -187,6 +188,7 @@ public class Text {
         dictionary.put("signers_none", "no hay firmas");
         dictionary.put("size", "tama\u00F1o");
         dictionary.put("skip", "ignorar");
+        dictionary.put("split", "desmonta llavero");
         dictionary.put("text", "texto");
         dictionary.put("unknown", "desconocida");
         dictionary.put("verify", "verificar");

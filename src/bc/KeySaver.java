@@ -56,7 +56,7 @@ public class KeySaver {
             File secFile = new File(where, filename + "_sec.asc");
             fos = new FileOutputStream(secFile);
             ArmoredOutputStream aos = new ArmoredOutputStream(fos);
-            aos.setHeader("Comment", Version.VERSION);
+            addComments(aos, key);
 
             PBESecretKeyDecryptor oldKeyDecryptor =
                     (new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()))
@@ -92,7 +92,7 @@ public class KeySaver {
             File file = new File(where, filename + "_pub.asc");
             fos = new FileOutputStream(file);
             ArmoredOutputStream aos = new ArmoredOutputStream(fos);
-            aos.setHeader("Comment", Version.VERSION);
+            addComments(aos, key);
 
             for (PGPPublicKey pgpPublicKey : key.getPublicKeyList())
                 aos.write(pgpPublicKey.getEncoded());
@@ -107,5 +107,17 @@ public class KeySaver {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    public static void addComments(ArmoredOutputStream aos, Key key) {
+        aos.setHeader("Comment", Version.VERSION);
+        aos.setHeader("Comment: user-id", key.toString());
+        if (key.getKcreation() != null) {
+            String validity = key.getKcreation();
+            if (key.getKexp() != null)
+                validity += " - " + key.getKexp();
+            aos.setHeader("Comment: validity", validity);
+        }
+        aos.setHeader("Comment: id", key.getFingerprintHex4());
     }
 }

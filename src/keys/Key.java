@@ -427,4 +427,12 @@ public class Key
     public void setFile(File file) {
         fileList.add(file);
     }
+
+    public String getKcreation() {
+        return kcreation;
+    }
+
+    public String getKexp() {
+        return kexp;
+    }
 }

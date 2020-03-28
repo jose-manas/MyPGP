@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * @author Jose A. Manas
  * @version 6.3.2015
  */
-class MyDirectoryChooser
+public class MyDirectoryChooser
         extends JPanel {
     private static final int MDC_WIDTH = 400;
     private static final int MDC_HEIGHT = (int) (MDC_WIDTH / 1.6);
@@ -23,7 +23,7 @@ class MyDirectoryChooser
     private final DefaultTreeModel filesystemModel;
     private final JTree filesystemTree;
 
-    MyDirectoryChooser() {
+    public MyDirectoryChooser() {
         super(new BorderLayout());
         DefaultMutableTreeNode top =
                 new DefaultMutableTreeNode(
@@ -89,7 +89,7 @@ class MyDirectoryChooser
         return null;
     }
 
-    File getSelectedDirectory() {
+    public File getSelectedDirectory() {
         try {
             TreePath path = filesystemTree.getSelectionPath();
             DefaultMutableTreeNode node = getTreeNode(path);

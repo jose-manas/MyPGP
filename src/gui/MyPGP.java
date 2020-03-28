@@ -20,6 +20,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import keys.RingSplitter;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -607,6 +608,7 @@ public class MyPGP {
         keyMenu.add(new ExportKeyAction(true));
         keyMenu.add(new ReloadKeysAction());
         keyMenu.add(new FileMapAction());
+        keyMenu.add(new SplitAction());
 
         JMenu listsMenu = new JMenu(Text.get("lists"));
         menuBar.add(listsMenu);
@@ -1343,6 +1345,22 @@ public class MyPGP {
             StringBuilder builder = new StringBuilder();
             directory.dumpLog(builder);
             MyTextArea.show(builder.toString(), frame);
+        }
+    }
+
+    private static class SplitAction
+            extends AbstractAction {
+        private SplitAction() {
+            super(Text.get("split"));
+        }
+
+        public void actionPerformed(ActionEvent event) {
+            getFileChooser();
+            File file = fch.getSelectedFile();
+            if (file == null)
+                return;
+            RingSplitter splitter = new RingSplitter(file);
+            splitter.go();
         }
     }
 
