@@ -20,7 +20,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import keys.RingSplitter;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -33,6 +32,8 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -203,7 +204,7 @@ public class MyPGP {
         keysTree.addMouseListener(new MyMouseListener(keysTree, selection));
 //            expandAll(keysTree);
         frame.getContentPane().remove(keysPanel);
-        keysPanel= new JScrollPane(keysTree);
+        keysPanel = new JScrollPane(keysTree);
         frame.getContentPane().add(keysPanel);
         if (secKeysExpanded)
             keysTree.expandPath(new TreePath(secKeyBranch.getPath()));
@@ -437,9 +438,30 @@ public class MyPGP {
     }
 
     public static void getPanel() {
+        final JTextField searchTextField = new JTextField();
+//        searchTextField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        searchTextField.setColumns(20);
+        searchTextField.setMaximumSize(searchTextField.getPreferredSize());
+        searchTextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent event) {
+                if (event.getKeyCode() == KeyEvent.VK_DOWN)
+                    find(true, searchTextField.getText());
+                if (event.getKeyCode() == KeyEvent.VK_UP)
+                    find(false, searchTextField.getText());
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        searchTextField.requestFocusInWindow();
+                    }
+                });
+            }
+        });
         processButton = new JButton(Text.get("decrypt_verify"));
         encryptButton = new JButton(Text.get("encrypt_sign"));
-        JPanel buttons = new JPanel();
+        JToolBar buttons = new JToolBar();
+        buttons.setFloatable(false);
+        buttons.add(searchTextField);
         buttons.add(Box.createHorizontalGlue());
         buttons.add(encryptButton);
         buttons.add(Box.createHorizontalStrut(10));
@@ -509,6 +531,69 @@ public class MyPGP {
         keysPanel = new JScrollPane(keysTree);
         frame.getContentPane().add(keysPanel);
         frame.getContentPane().add(buttons, BorderLayout.SOUTH);
+    }
+
+    private static DefaultMutableTreeNode last;
+
+    private static void find(boolean goDown, String text) {
+        if (text == null || text.length() == 0)
+            return;
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) keysTree.getModel().getRoot();
+        DefaultMutableTreeNode from;
+        int row = keysTree.getMinSelectionRow();
+        if (row < 0) {
+            from = last;
+        } else {
+            TreePath path = keysTree.getPathForRow(row);
+            from = (DefaultMutableTreeNode) path.getLastPathComponent();
+        }
+        if (from == null)
+            from = root;
+        if (from == null)
+            return;
+        DefaultMutableTreeNode found = find(goDown, text.toLowerCase(), from);
+        if (found != null) {
+            last = found;
+            TreePath path = new TreePath(found.getPath());
+            keysTree.makeVisible(path);
+            keysTree.setSelectionPath(path);
+            keysTree.scrollPathToVisible(path);
+        }
+    }
+
+    private static DefaultMutableTreeNode find(boolean goDown, String text, DefaultMutableTreeNode from) {
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) keysTree.getModel().getRoot();
+        DefaultMutableTreeNode tail = root.getLastLeaf();
+        boolean root_visited = false;
+        DefaultMutableTreeNode next = from;
+        try {
+            for (; ; ) {
+                if (goDown)
+                    next = next.getNextNode();
+                else
+                    next = next.getPreviousNode();
+                if (next == null) {
+                    if (root_visited)
+                        return null;
+                    if (goDown)
+                        next = root;
+                    else
+                        next = tail;
+                    root_visited = true;
+                }
+                if (next == from)
+                    return null;
+                Object object = next.getUserObject();
+                if (object instanceof Key) {
+                    String name = object.toString();
+                    if (name != null && name.length() > 0 &&
+                            name.toLowerCase().contains(text))
+                        return next;
+                }
+            }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static int getFileChooser() {

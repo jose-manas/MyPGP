@@ -30,6 +30,7 @@ public class MyTreeRenderer
         panel = Box.createHorizontalBox();
         label_1 = new JLabel();
         label_2 = new JLabel();
+        label_2.setOpaque(true);
         panel.add(label_1);
         panel.add(Box.createHorizontalStrut(2));
         panel.add(label_2);
@@ -39,6 +40,14 @@ public class MyTreeRenderer
                                                   boolean selected, boolean expanded,
                                                   boolean leaf, int row, boolean hasFocus) {
         try {
+            if (selected) {
+                label_2.setBackground(Color.blue);
+                label_2.setForeground(Color.white);
+            } else {
+                label_2.setBackground(Color.white);
+                label_2.setForeground(Color.darkGray);
+            }
+
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
             Object x = node.getUserObject();
             if (x instanceof Key)
