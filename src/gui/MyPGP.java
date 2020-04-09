@@ -22,6 +22,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
@@ -457,11 +458,32 @@ public class MyPGP {
                 });
             }
         });
+        JButton upButton = new BasicArrowButton(SwingConstants.NORTH);
+        upButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                find(false, searchTextField.getText());
+            }
+        });
+        JButton downButton = new BasicArrowButton(SwingConstants.SOUTH);
+        downButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                find(true, searchTextField.getText());
+            }
+        });
+        JPanel small = new JPanel();
+        small.add(upButton);
+        small.add(downButton);
+        small.setMaximumSize(small.getPreferredSize());
+        small.setBackground(new Color(0, 0, 0, 0));
+
         processButton = new JButton(Text.get("decrypt_verify"));
         encryptButton = new JButton(Text.get("encrypt_sign"));
         JToolBar buttons = new JToolBar();
         buttons.setFloatable(false);
         buttons.add(searchTextField);
+        buttons.add(small);
         buttons.add(Box.createHorizontalGlue());
         buttons.add(encryptButton);
         buttons.add(Box.createHorizontalStrut(10));
