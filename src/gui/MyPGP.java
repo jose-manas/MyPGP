@@ -55,7 +55,7 @@ public class MyPGP {
     private static JButton encryptButton;
 
     private static JFrame frame;
-    private static SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
 
     private static DefaultMutableTreeNode secKeyBranch;
     private static DefaultMutableTreeNode listsBranch;
@@ -70,11 +70,13 @@ public class MyPGP {
 //    private static RefreshAction refreshAction;
 //    private static SecureDeleteAction secureDeleteAction;
 
-    private static Set<Object> selection = new HashSet<>();
+    private static final Set<Object> selection = new HashSet<>();
 
     static {
         LogWindow.log("java home: " + System.getProperty("java.home"));
         LogWindow.log("java version: " + System.getProperty("java.version"));
+        LogWindow.log("BouncyCastle version: " +
+                BouncyCastleProvider.class.getPackage().getImplementationVersion());
         LogWindow.log("HOME: " + Info.getHome());
         LogWindow.log();
     }
@@ -443,6 +445,12 @@ public class MyPGP {
 //        searchTextField.setBorder(javax.swing.BorderFactory.createEmptyBorder());
         searchTextField.setColumns(20);
         searchTextField.setMaximumSize(searchTextField.getPreferredSize());
+        searchTextField.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                find(true, searchTextField.getText());
+            }
+        });
         searchTextField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent event) {
