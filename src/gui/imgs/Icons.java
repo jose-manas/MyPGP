@@ -1,5 +1,7 @@
 package gui.imgs;
 
+import keys.Key;
+
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
@@ -15,7 +17,8 @@ public class Icons {
     private static ImageIcon closedIcon;
     private static ImageIcon computerIcon;
     private static ImageIcon diskIcon;
-    private static ImageIcon keyIcon;
+    private static ImageIcon pkeyIcon;
+    private static ImageIcon skeyIcon;
     private static ImageIcon listIcon;
     private static ImageIcon openIcon;
     private static ImageIcon textIcon;
@@ -47,10 +50,23 @@ public class Icons {
         return diskIcon;
     }
 
-    public static Icon getKeyIcon() {
-        if (keyIcon == null)
-            keyIcon = loadIcon("key.png");
-        return keyIcon;
+    public static Icon getKeyIcon(Key key) {
+        if (key.isSecret())
+            return getSKeyIcon();
+        else
+            return getPKeyIcon();
+    }
+
+    private static Icon getPKeyIcon() {
+        if (pkeyIcon == null)
+            pkeyIcon = loadIcon("pkey.png");
+        return pkeyIcon;
+    }
+
+    private static Icon getSKeyIcon() {
+        if (skeyIcon == null)
+            skeyIcon = loadIcon("skey.png");
+        return skeyIcon;
     }
 
     public static Icon getListIcon() {

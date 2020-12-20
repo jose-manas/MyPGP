@@ -92,7 +92,7 @@ public class MyTreeRenderer
 
     private Component getRenderer(Key key, Icon selected) {
         label_1.setIcon(selected);
-        label_2.setIcon(Icons.getKeyIcon());
+        label_2.setIcon(Icons.getKeyIcon(key));
         label_2.setText(key.toString());
         return panel;
     }
