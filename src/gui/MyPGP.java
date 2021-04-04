@@ -20,6 +20,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import keys.RingSplitter;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicArrowButton;
@@ -504,11 +505,8 @@ public class MyPGP {
                 File[] files = fch.getSelectedFiles();
                 if (files == null || files.length == 0)
                     return;
-                LogWindow.openItem(Text.get("decrypt_verify"));
+                LogWindow.add(Text.get("decrypt_verify"));
                 decrypt_verify_Selection(files);
-                LogWindow.closeItem();
-                fch.rescanCurrentDirectory();
-                fch.setSelectedFiles(files);
             }
         });
         encryptButton.addActionListener(new ActionListener() {
@@ -517,11 +515,8 @@ public class MyPGP {
                 File[] files = fch.getSelectedFiles();
                 if (files == null || files.length == 0)
                     return;
-                LogWindow.openItem(Text.get("encrypt_sign"));
+                LogWindow.add(Text.get("encrypt_sign"));
                 encrypt_sign_Selection(files);
-                LogWindow.closeItem();
-                fch.rescanCurrentDirectory();
-                fch.setSelectedFiles(files);
             }
         });
 
@@ -532,9 +527,8 @@ public class MyPGP {
                     Transferable transferable = evt.getTransferable();
                     if (transferable.isDataFlavorSupported(FILE_LIST_FLAVOR)) {
                         List<File> droppedFiles = (List<File>) transferable.getTransferData(FILE_LIST_FLAVOR);
-                        LogWindow.openItem(Text.get("decrypt_verify"));
+                        LogWindow.add(Text.get("decrypt_verify"));
                         decrypt_verify_Selection(droppedFiles.toArray(new File[0]));
-                        LogWindow.closeItem();
                     }
                 } catch (Exception ex) {
                     MyLogger.dump(ex, Text.get("drop"));
@@ -548,9 +542,8 @@ public class MyPGP {
                     Transferable transferable = evt.getTransferable();
                     if (transferable.isDataFlavorSupported(FILE_LIST_FLAVOR)) {
                         List<File> droppedFiles = (List<File>) transferable.getTransferData(FILE_LIST_FLAVOR);
-                        LogWindow.openItem(Text.get("encrypt_sign"));
+                        LogWindow.add(Text.get("encrypt_sign"));
                         encrypt_sign_Selection(droppedFiles.toArray(new File[0]));
-                        LogWindow.closeItem();
                     }
                 } catch (Exception ex) {
                     MyLogger.dump(ex, Text.get("drop"));
@@ -647,24 +640,9 @@ public class MyPGP {
     }
 
     private static void decrypt_verify_Selection(File[] files) {
-        Map<Long, char[]> passwords = new HashMap<>();
-        try {
-            for (File blackFile : files) {
-                try {
-                    BcUtilsFiles.process(blackFile, passwords);
-                } catch (PasswordCancelled ignored) {
-                } catch (PGPException e) {
-                    LogWindow.add(e);
-                    if (e.getUnderlyingException() != null)
-                        MyLogger.dump(e.getUnderlyingException(), Text.get("process"));
-                } catch (Exception e) {
-                    MyLogger.dump(e, Text.get("process"));
-                }
-            }
-        } finally {
-            for (char[] password : passwords.values())
-                clearPassword(password);
-        }
+        String action = Text.get("decrypt_verify");
+        DecryptVerifyWorker worker = new DecryptVerifyWorker(action, files);
+        worker.execute();
     }
 
     private static void encrypt_sign_Selection(File[] files) {
@@ -689,28 +667,10 @@ public class MyPGP {
 
         try {
             boolean armor = ArmorPanel.getArmor(action, true, ".pgp");
-            for (File redFile : files) {
-                LogWindow.add(redFile.getName());
-                try {
-                    if (encryptingKeys.size() > 0 && signingKeys.size() > 0)
-                        BcUtilsFiles.encrypt_sign(redFile, signingKeys, encryptingKeys, passwords, armor);
-                    if (encryptingKeys.size() > 0 && signingKeys.size() == 0)
-                        BcUtilsFiles.encrypt(redFile, encryptingKeys, armor);
-                    if (encryptingKeys.size() == 0 && signingKeys.size() > 0)
-                        BcUtilsFiles.sign(redFile, signingKeys, passwords, armor);
-                } catch (PGPException e) {
-                    LogWindow.add(e);
-                    if (e.getUnderlyingException() != null)
-                        MyLogger.dump(e.getUnderlyingException(), action);
-                } catch (Exception e) {
-                    MyLogger.dump(e, action);
-                }
-            }
+            EncryptSignWorker worker = new EncryptSignWorker(action, files, encryptingKeys, signingKeys, passwords, armor);
+            worker.execute();
         } catch (PasswordCancelled ignored) {
         }
-
-        for (char[] password : passwords.values())
-            clearPassword(password);
     }
 
     private static JMenuBar getMenuBar() {
@@ -811,7 +771,7 @@ public class MyPGP {
                 keys.add(key);
         }
         for (Key key : keys)
-            LogWindow.addSecret(key);
+            LogWindow.signer(key);
         return keys;
     }
 
@@ -866,7 +826,7 @@ public class MyPGP {
                 keys.add(key);
         }
         for (Key key : keys)
-            LogWindow.addPublic(key);
+            LogWindow.encryptingFor(key);
         return keys;
     }
 
@@ -910,11 +870,8 @@ public class MyPGP {
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
                 return;
-            LogWindow.openItem(Text.get("encrypt"));
+            LogWindow.add(Text.get("encrypt"));
             encrypt_sign_Selection(files);
-            LogWindow.closeItem();
-            fch.rescanCurrentDirectory();
-            fch.setSelectedFiles(files);
         }
     }
 
@@ -932,46 +889,27 @@ public class MyPGP {
                 return;
 
             Map<Key, char[]> passwords = new HashMap<>();
-            try {
-                LogWindow.openItem(Text.get("sign"));
-                List<Key> signingKeys = getSigningKeys();
-                if (signingKeys.isEmpty()) {
-                    LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), signingKeys.size()));
-                    return;
-                }
-
-                boolean armor;
-                try {
-                    armor = ArmorPanel.getArmor(action, false, ".sig");
-                    for (Key signingKey : signingKeys) {
-                        String label = action + ": " + signingKey;
-                        char[] password = GetPassword.getInstance().getDecryptionPassword(label);
-                        passwords.put(signingKey, password);
-                    }
-                } catch (PasswordCancelled passwordCancelled) {
-                    return;
-                }
-
-                for (File redFile : files) {
-                    try {
-                        LogWindow.add(redFile.getName());
-                        BcUtilsFiles.sign(redFile, signingKeys, passwords, armor);
-                    } catch (PGPException e) {
-                        LogWindow.add(e);
-                        if (e.getUnderlyingException() != null)
-                            MyLogger.dump(e.getUnderlyingException(), action);
-                    } catch (Exception e) {
-                        MyLogger.dump(e, action);
-                    }
-                }
-            } finally {
-                LogWindow.closeItem();
-
-                for (char[] password : passwords.values())
-                    clearPassword(password);
-                fch.rescanCurrentDirectory();
-                fch.setSelectedFiles(files);
+            LogWindow.add(Text.get("sign"));
+            List<Key> signingKeys = getSigningKeys();
+            if (signingKeys.isEmpty()) {
+                LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), signingKeys.size()));
+                return;
             }
+
+            boolean armor;
+            try {
+                armor = ArmorPanel.getArmor(action, false, ".sig");
+                for (Key signingKey : signingKeys) {
+                    String label = action + ": " + signingKey;
+                    char[] password = GetPassword.getInstance().getDecryptionPassword(label);
+                    passwords.put(signingKey, password);
+                }
+            } catch (PasswordCancelled passwordCancelled) {
+                return;
+            }
+
+            SignWorker worker= new SignWorker(action, files, signingKeys, passwords, armor);
+            worker.execute();
         }
     }
 
@@ -987,12 +925,8 @@ public class MyPGP {
             if (files == null || files.length == 0)
                 return;
 
-            LogWindow.openItem(Text.get("encrypt_sign"));
+            LogWindow.add(Text.get("encrypt_sign"));
             encrypt_sign_Selection(files);
-            LogWindow.closeItem();
-
-            fch.rescanCurrentDirectory();
-            fch.setSelectedFiles(files);
         }
     }
 
@@ -1008,11 +942,8 @@ public class MyPGP {
             if (files == null || files.length == 0)
                 return;
 
-            LogWindow.openItem(Text.get("decrypt_verify"));
+            LogWindow.add(Text.get("decrypt_verify"));
             decrypt_verify_Selection(files);
-            LogWindow.closeItem();
-            fch.rescanCurrentDirectory();
-            fch.setSelectedFiles(files);
         }
     }
 
@@ -1051,12 +982,10 @@ public class MyPGP {
             List<Key> encryptingKeys = getEncryptingKeys();
             if (encryptingKeys.size() == 0) {
                 LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
-                LogWindow.closeItem();
                 return;
             }
 
-            LogWindow.openItem(action);
-            LogWindow.add(Text.get("clipboard"));
+            LogWindow.add(action + " " + Text.get("clipboard"));
             try {
                 String redText = MyClipBoard.readString();
                 String blackText = BcUtilsClipboard.encrypt(redText, encryptingKeys);
@@ -1068,7 +997,6 @@ public class MyPGP {
             } catch (Exception e) {
                 MyLogger.dump(e, action);
             }
-            LogWindow.closeItem();
         }
     }
 
@@ -1081,12 +1009,10 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("sign");
 
-            LogWindow.openItem(action);
-            LogWindow.add(Text.get("clipboard"));
+            LogWindow.add(action + " " + Text.get("clipboard"));
             List<Key> signingKeys = getSigningKeys();
             if (signingKeys.size() != 1) {
                 LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), signingKeys.size()));
-                LogWindow.closeItem();
                 return;
             }
             Key signingKey = signingKeys.get(0);
@@ -1104,7 +1030,6 @@ public class MyPGP {
             } catch (Exception e) {
                 MyLogger.dump(e, action);
             }
-            LogWindow.closeItem();
         }
     }
 
@@ -1124,7 +1049,7 @@ public class MyPGP {
 
         char[] password = new char[0];
         try {
-            LogWindow.openItem(action);
+            LogWindow.add(action);
             LogWindow.add(Text.get("clipboard"));
             List<Key> encryptingKeys = getEncryptingKeys();
             List<Key> signingKeys = getSigningKeys();
@@ -1141,6 +1066,8 @@ public class MyPGP {
                     return;
                 }
             }
+            if (signingKey == null)
+                return;
 
             try {
                 String blackText = "";
@@ -1159,7 +1086,6 @@ public class MyPGP {
                 MyLogger.dump(e, action);
             }
         } finally {
-            LogWindow.closeItem();
             clearPassword(password);
         }
     }
@@ -1172,8 +1098,7 @@ public class MyPGP {
 
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("decrypt_verify");
-            LogWindow.openItem(action);
-            LogWindow.add(Text.get("clipboard"));
+            LogWindow.add(action + " " + Text.get("clipboard"));
             try {
                 String blackText = MyClipBoard.readString();
                 String redText = BcUtilsClipboard.process(blackText);
@@ -1186,7 +1111,6 @@ public class MyPGP {
             } catch (Exception e) {
                 MyLogger.dump(e, action);
             }
-            LogWindow.closeItem();
         }
     }
 
@@ -1198,7 +1122,7 @@ public class MyPGP {
 
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("delete");
-            LogWindow.openItem(action);
+            LogWindow.add(action);
             getFileChooser();
             File[] files = fch.getSelectedFiles();
             if (files == null || files.length == 0)
@@ -1224,14 +1148,11 @@ public class MyPGP {
                     MyLogger.dump(e, action);
                 }
             }
-            LogWindow.closeItem();
-            fch.rescanCurrentDirectory();
         }
     }
 
     static void fileDeleted(SecureDeleteWorker worker) {
         try {
-            fch.rescanCurrentDirectory();
             Exception executonException = worker.getExecutonException();
             if (executonException != null)
                 throw executonException;
@@ -1281,7 +1202,7 @@ public class MyPGP {
                     continue;
                 break;
             }
-            LogWindow.openItem(Text.get("generate"));
+            LogWindow.add(Text.get("generate"));
 
             KeyGeneratingThread task = new KeyGeneratingThread(
                     where,
@@ -1312,7 +1233,6 @@ public class MyPGP {
                 MyLogger.dump(e, Text.get("generate"));
             }
         }
-        LogWindow.closeItem();
         reloadKeys();
     }
 
@@ -1408,16 +1328,15 @@ public class MyPGP {
             if (where == null)
                 return;
 
-            LogWindow.openItem(Text.get("export"));
+            LogWindow.add(Text.get("export"));
             for (Key key : secretKeys) {
-                LogWindow.addSecret(key);
+                LogWindow.secret(key);
                 KeySaver.exportSecretKey(where, key);
             }
             for (Key key : publicKeys) {
-                LogWindow.addPublic(key);
+                LogWindow.pub(key);
                 KeySaver.exportPublicKey(where, key);
             }
-            LogWindow.closeItem();
         }
 
         private File getFile() {

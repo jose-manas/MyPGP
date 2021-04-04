@@ -8,7 +8,6 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.ArrayList;
 
 /**
  * @author Jose A. Manas
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 public class LogWindow {
     private static JFrame frame;
     private static JTextArea LOG_AREA;
-    private static Item item;
 
     private static void init() {
         if (frame == null) {
@@ -45,26 +43,6 @@ public class LogWindow {
         }
     }
 
-    public static void print(Item item) {
-        init();
-        if (item.command != null)
-            LOG_AREA.append(String.format("%s\n", item.command));
-        if (item.publicKeyList.size() > 0) {
-            LOG_AREA.append(String.format("  %s\n", Text.get("public_keys")));
-            for (Key key : item.publicKeyList)
-                LOG_AREA.append(String.format("    > %s\n", key.toString()));
-        }
-        if (item.secretKeyList.size() > 0) {
-            LOG_AREA.append(String.format("  %s\n", Text.get("secret_keys")));
-            for (Key key : item.secretKeyList)
-                LOG_AREA.append(String.format("    > %s\n", key.toString()));
-        }
-        for (String s : item.textList)
-            LOG_AREA.append(String.format("  %s\n", s));
-        LOG_AREA.append("\n");
-        LOG_AREA.setCaretPosition(LOG_AREA.getDocument().getLength());
-    }
-
     public static void log(String s) {
         init();
         LOG_AREA.append(String.format("%s\n", s));
@@ -75,36 +53,39 @@ public class LogWindow {
         LOG_AREA.append("\n");
     }
 
-    public static void openItem(String s) {
-        if (item != null)
-            print(item);
-        item = new Item(s);
+    public static void pub(Key key) {
+        add(String.format("  %s: %s",
+                Text.get("public_keys"),
+                key.toString()));
     }
 
-    public static void closeItem() {
-        if (item == null)
-            return;
-        print(item);
-        item = null;
+    public static void encryptingFor(Key key) {
+        add(String.format("  %s: %s",
+                Text.get("encrypt"),
+                key.toString()));
+    }
+    public static void encryptedFor(Key key) {
+        add(String.format("  %s: %s",
+                Text.get("encypted_for"),
+                key.toString()));
     }
 
-    public static void addPublic(Key key) {
-        if (item == null)
-            item = new Item();
-        item.addPublic(key);
+    public static void secret(Key key) {
+        add(String.format("  %s: %s",
+                Text.get("secret_keys"),
+                key.toString()));
     }
 
-    public static void addSecret(Key key) {
-        if (item == null)
-            item = new Item();
-        item.addSecret(key);
+    public static void signer(Key key) {
+        add(String.format("  %s: %s",
+                Text.get("signer"),
+                key.toString()));
     }
 
     public static void add(String s) {
-        if (item == null)
-            item = new Item(s);
-        else
-            item.add(s);
+        init();
+        LOG_AREA.append(String.format("%s%n", s));
+        LOG_AREA.setCaretPosition(LOG_AREA.getDocument().getLength());
     }
 
     public static void add(Exception e) {
@@ -145,39 +126,5 @@ public class LogWindow {
                 out.append(c);
         }
         return out.toString();
-    }
-
-    public static class Item {
-        private final String command;
-        private java.util.List<Key> publicKeyList = new ArrayList<>();
-        private java.util.List<Key> secretKeyList = new ArrayList<>();
-        private java.util.List<String> textList = new ArrayList<>();
-
-        public Item(String command) {
-            this.command = command;
-        }
-
-        public Item() {
-            this.command = null;
-        }
-
-        public void addPublic(Key key) {
-            publicKeyList.add(key);
-        }
-
-        public void addSecret(Key key) {
-            secretKeyList.add(key);
-        }
-
-        public void add(String text) {
-            textList.add(text);
-        }
-
-        public String toString() {
-            if (command != null)
-                return command;
-            else
-                return "no command";
-        }
     }
 }

@@ -301,8 +301,7 @@ public class BcUtilsClipboard {
             throws IOException, PasswordCancelled, PGPException {
 //        BcUtils.log1(String.format("%s(%s)",
 //                Text.get("decrypt"), Text.get("clipboard")));
-        LogWindow.openItem(Text.get("decrypt"));
-        LogWindow.add(Text.get("clipboard"));
+        LogWindow.add(Text.get("decrypt") + " " + Text.get("clipboard"));
 
         byte[] blackBytes = blackText.getBytes(StandardCharsets.UTF_8);
         InputStream is = CRLF.sanitize(new ByteArrayInputStream(blackBytes));

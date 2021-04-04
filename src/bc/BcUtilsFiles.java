@@ -34,12 +34,13 @@ public class BcUtilsFiles {
      * @param redFile    file to encrypt.
      * @param publicKeys destinations.
      * @param armor      true means asc file (text).
+     * @param worker
      * @throws Exception if anything goes wrong.
      */
-    public static void encrypt(File redFile, List<Key> publicKeys, boolean armor)
+    public static void encrypt(File redFile, List<Key> publicKeys, boolean armor, EncryptSignWorker worker)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
-        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        tolog(worker, Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
 
 //        boolean armor = true;
@@ -111,7 +112,7 @@ public class BcUtilsFiles {
      * @param armor     true means asc file (text).
      * @throws Exception if anything goes wrong.
      */
-    public static void sign(File inFile, Key signerKey, char[] password, boolean armor)
+    public static void sign(File inFile, Key signerKey, char[] password, boolean armor, MyWorker worker)
             throws Exception {
 //        boolean armor = false;
 
@@ -130,7 +131,7 @@ public class BcUtilsFiles {
         ) {
             int signAlgo = publicKey.getAlgorithm();
             int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-            LogWindow.add(String.format("%s: %s(%s)",
+            tolog(worker, String.format("%s: %s(%s)",
                         Text.get("sign"),
                         ToString.publicKey(signAlgo),
                         ToString.hash(hashAlgo)));
@@ -165,12 +166,14 @@ public class BcUtilsFiles {
      * @param signerKeyList signers.
      * @param passwords     signers' passwords.
      * @param armor         true means asc file (text).
+     * @param worker
      * @throws Exception if anything goes wrong.
      */
     public static void sign(File inFile,
                             List<Key> signerKeyList,
                             Map<Key, char[]> passwords,
-                            boolean armor)
+                            boolean armor,
+                            MyWorker worker)
             throws Exception {
 //        boolean armor = false;
 
@@ -203,10 +206,10 @@ public class BcUtilsFiles {
 
                 int signAlgo = publicKey.getAlgorithm();
                 int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                LogWindow.add(String.format("%s: %s(%s)",
-                                Text.get("sign"),
-                                ToString.publicKey(signAlgo),
-                                ToString.hash(hashAlgo)));
+                tolog(worker, String.format("%s: %s(%s)",
+                        Text.get("sign"),
+                        ToString.publicKey(signAlgo),
+                        ToString.hash(hashAlgo)));
 
                 JcaPGPContentSignerBuilder contentSignerBuilder =
                         new JcaPGPContentSignerBuilder(signAlgo, hashAlgo)
@@ -238,16 +241,17 @@ public class BcUtilsFiles {
      * @param encryptingKeys destinations.
      * @param passwords      signers' passwords.
      * @param armor          true means asc file (text).
+     * @param worker
      * @throws Exception if anything goes wrong.
      */
     public static void encrypt_sign(File redFile,
                                     List<Key> signerKeyList,
                                     List<Key> encryptingKeys,
                                     Map<Key, char[]> passwords,
-                                    boolean armor)
+                                    boolean armor, EncryptSignWorker worker)
             throws Exception {
         int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
-        LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+        tolog(worker, Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
 
 //        boolean armor = true;
@@ -277,14 +281,16 @@ public class BcUtilsFiles {
                 encryptedDataGenerator.addMethod(keyEncryptionMethodGenerator);
             }
 
-            encrypt_sign_1(blackFile, redFile, out, signerKeyList, compressionAlgo, passwords, encryptedDataGenerator);
+            encrypt_sign_1(blackFile, redFile, out, signerKeyList, compressionAlgo, passwords,
+                    encryptedDataGenerator, worker);
             encryptedDataGenerator.close();
         }
     }
 
     private static void encrypt_sign_1(File blackFile, File redFile, OutputStream out, List<Key> signerKeyList,
                                        int compressionAlgo, Map<Key, char[]> passwords,
-                                       PGPEncryptedDataGenerator encryptedDataGenerator)
+                                       PGPEncryptedDataGenerator encryptedDataGenerator,
+                                       MyWorker worker)
             throws IOException, PGPException {
         PGPPublicKey[] publicKeys = new PGPPublicKey[signerKeyList.size()];
         PGPPrivateKey[] privateKeys = new PGPPrivateKey[signerKeyList.size()];
@@ -311,7 +317,7 @@ public class BcUtilsFiles {
 
                     int signAlgo = publicKey.getAlgorithm();
                     int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
-                    LogWindow.add(String.format("%s: %s(%s)",
+                    tolog(worker, String.format("%s: %s(%s)",
                                         Text.get("sign"),
                                         ToString.publicKey(signAlgo),
                                         ToString.hash(hashAlgo)));
@@ -359,9 +365,9 @@ public class BcUtilsFiles {
         }
     }
 
-    private static void decrypt(File redFile, File blackFile, Map<Long, char[]> passwords)
+    private static void decrypt(File redFile, File blackFile, Map<Long, char[]> passwords, MyWorker worker)
             throws IOException, PasswordCancelled, PGPException {
-        LogWindow.add(String.format("%s(%s) --> %s",
+        tolog(null, String.format("%s(%s) --> %s",
                 Text.get("decrypt"), blackFile.getName(), redFile.getName()));
         if (blackFile.length() == 0)
             return;
@@ -372,7 +378,7 @@ public class BcUtilsFiles {
 
             List<PGPPublicKeyEncryptedData> list = BcUtils.getKnownKeyEncryptedData(encryptedDataList);
             if (list.size() == 0) {
-                LogWindow.add(Text.get("no_known_key"));
+                tolog(null, Text.get("no_known_key"));
                 return;
             }
 
@@ -396,7 +402,7 @@ public class BcUtilsFiles {
                     break;
             }
             if (sKey == null) {
-                LogWindow.add(Text.get("no_known_key"));
+                tolog(null, Text.get("no_known_key"));
                 return;
             }
 
@@ -408,7 +414,7 @@ public class BcUtilsFiles {
                             .setProvider("BC")
                             .build(sKey);
             int encryptAlgo = pbe.getSymmetricAlgorithm(factory);
-            LogWindow.add(Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
+            tolog(null, Text.get("decrypt") + ": " + ToString.symmetricKey(encryptAlgo));
             try (InputStream clear = pbe.getDataStream(factory)) {
                 PGPObjectFactory pgpObjectFactory = new BcPGPObjectFactory(clear);
 
@@ -436,7 +442,7 @@ public class BcUtilsFiles {
                 }
 
                 if (pbe.isIntegrityProtected() && !pbe.verify())
-                    LogWindow.add("integrity check fails");
+                    tolog(worker, "integrity check fails");
 
                 try (OutputStream redOs = new BufferedOutputStream(new FileOutputStream(redFile))) {
                     redOs.write(redBytes);
@@ -455,7 +461,7 @@ public class BcUtilsFiles {
      * @throws IOException  errors.
      * @throws PGPException errors.
      */
-    public static void verify(File signatureFile, File redFile)
+    public static void verify(File signatureFile, File redFile, MyWorker worker)
             throws IOException, PGPException {
         try (
                 InputStream sigIs = new FileInputStream(signatureFile);
@@ -475,32 +481,32 @@ public class BcUtilsFiles {
 
             for (int i = 0; i < signatureList.size(); i++) {
                 PGPSignature signature = signatureList.get(i);
-                verify(redFile, signature);
+                verify(redFile, signature, worker);
             }
         }
     }
 
-    private static void verify(PGPSignatureList signatureList, File redFile)
+    private static void verify(PGPSignatureList signatureList, File redFile, MyWorker worker)
             throws IOException, PGPException {
         for (int i = 0; i < signatureList.size(); i++) {
             PGPSignature signature = signatureList.get(i);
-            verify(redFile, signature);
+            verify(redFile, signature, worker);
         }
     }
 
-    private static void verify(File redFile, PGPSignature signature)
+    private static void verify(File redFile, PGPSignature signature, MyWorker worker)
             throws PGPException, IOException {
         int hashAlgo = signature.getHashAlgorithm();
         int signAlgo = signature.getKeyAlgorithm();
-        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        tolog(worker, String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getKey(signature.getKeyID());
         if (key == null) {
-            LogWindow.add(String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
+            tolog(worker, String.format("%s: %s", Text.get("signer"), Key.mkId8(signature.getKeyID())));
             return;
         }
-        LogWindow.add(String.format("%s: %s", Text.get("signer"), key));
+        tolog(worker, String.format("%s: %s", Text.get("signer"), key));
 
         PGPPublicKey publicKey = key.getPublicKey();
         signature.init(
@@ -520,7 +526,8 @@ public class BcUtilsFiles {
 //            LogWindow.add(Text.get("signature_ok"));
 //        else
 //            LogWindow.add(Text.get("signature_bad"));
-        LogWindow.signature(signature.verify(), key, redFile);
+//        LogWindow.signature(signature.verify(), key, redFile);
+        tolog(worker, new SignedItem(redFile, key, signature.verify()));
     }
 
     /**
@@ -532,7 +539,7 @@ public class BcUtilsFiles {
      * @throws PasswordCancelled  user cancels.
      * @throws PGPException       errors.
      */
-    public static void process(File blackFile, Map<Long, char[]> passwords)
+    public static void process(File blackFile, Map<Long, char[]> passwords, MyWorker worker)
             throws IOException, PasswordCancelled, PGPException {
         if (blackFile.length() == 0)
             return;
@@ -549,9 +556,9 @@ public class BcUtilsFiles {
                     x = null;
                 }
                 if (x == null) {
-                    LogWindow.add(String.format("%s(%s) :",
+                    tolog(worker, String.format("%s(%s) :",
                                         Text.get("process"), blackFile.getName()));
-                    LogWindow.add(String.format("%s: %s", blackFile.getName(), Text.get("exception.bad_format")));
+                    tolog(worker, String.format("%s: %s", blackFile.getName(), Text.get("exception.bad_format")));
                     return;
                 }
                 if (x instanceof PGPCompressedData) {
@@ -565,24 +572,24 @@ public class BcUtilsFiles {
                 File redFile = mkRedFile(Text.get("process"), blackFile);
                 if (redFile == null)
                     redFile = new File(blackFile.getParent(), "mypgp.out");
-                decrypt(redFile, blackFile, passwords);
+                decrypt(redFile, blackFile, passwords, worker);
                 return;
             }
 
             if (x instanceof PGPSignatureList) {
                 File redFile = getRedFile(Text.get("process"), blackFile);
                 String filenameString = redFile == null ? "no" : redFile.getName();
-                LogWindow.add(String.format("%s == %s(%s) :",
+                tolog(worker, String.format("%s == %s(%s) :",
                                 blackFile.getName(), Text.get("signature"), filenameString));
                 if (redFile == null)
-                    LogWindow.add(String.format("%s: %s", blackFile.getName(), Text.get("no_signed_file")));
+                    tolog(worker, String.format("%s: %s", blackFile.getName(), Text.get("no_signed_file")));
                 else
-                    verify((PGPSignatureList) x, redFile);
+                    verify((PGPSignatureList) x, redFile, worker);
                 return;
             }
 
             if (x instanceof PGPOnePassSignatureList) {
-                LogWindow.add(String.format("%s(%s) :",
+                tolog(worker, String.format("%s(%s) :",
                                 Text.get("signature"), blackFile.getName()));
                 PGPOnePassSignatureList onePassSignatureList = (PGPOnePassSignatureList) x;
 
@@ -593,9 +600,9 @@ public class BcUtilsFiles {
 
                 if (filename != null) {
                     if (date == null || date.getTime() == 0)
-                        LogWindow.add("-> " + filename);
+                        tolog(worker, "-> " + filename);
                     else
-                        LogWindow.add(String.format("-> %s (%tF)", filename, date));
+                        tolog(worker, String.format("-> %s (%tF)", filename, date));
                     File redFile = new File(blackFile.getParent(), filename);
                     if (redFile.exists())
                         redFile = new File(blackFile.getParent(), "mypgp.out");
@@ -610,21 +617,21 @@ public class BcUtilsFiles {
             }
 
             if (x instanceof PGPPublicKey)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPPublicKeyRing)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPPublicKeyRingCollection)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
 
             else if (x instanceof PGPSecretKey)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPSecretKeyRing)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
             else if (x instanceof PGPSecretKeyRingCollection)
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
 
             else
-                LogWindow.add(String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
+                tolog(worker, String.format("%s: %s", blackFile.getName(), x.getClass().getSimpleName()));
         }
     }
 
@@ -732,5 +739,19 @@ public class BcUtilsFiles {
             return aos;
         }
         return os;
+    }
+
+    private static void tolog(MyWorker worker, String msg) {
+        if (worker == null)
+            LogWindow.add(msg);
+        else
+            worker.topublish(msg);
+    }
+
+    private static void tolog(MyWorker worker, SignedItem msg) {
+        if (worker == null)
+            LogWindow.signature(msg.verify, msg.signer, msg.file);
+        else
+            worker.topublish(msg);
     }
 }
