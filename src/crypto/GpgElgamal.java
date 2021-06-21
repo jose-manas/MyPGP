@@ -174,10 +174,6 @@ public class GpgElgamal {
         }
     }
 
-    private static void progress(char c) {
-        System.out.print(c);
-    }
-
     private static BigInteger gen_prime(int nbits) {
         return new BigInteger(nbits, 20, random);
     }
@@ -239,7 +235,7 @@ public class GpgElgamal {
             StringBuilder builder = new StringBuilder();
             for (int p = n; p > 0; p--)
                 builder.append(bits.get(p - 1) ? '1' : '0');
-            System.out.println(builder.toString());
+            System.out.println(builder);
         } while (next_m_of_n(bits, n));
     }
 

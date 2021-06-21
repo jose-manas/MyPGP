@@ -152,7 +152,7 @@ public class MyDirectoryChooser
         }
     }
 
-    private class FileNode {
+    private static class FileNode {
         private final File file;
 
         FileNode(File file) {
