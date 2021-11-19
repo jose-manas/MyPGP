@@ -34,7 +34,8 @@ class BcUtils {
             return pgpSecretKey.extractPrivateKey(decryptor);
         } catch (PGPException e) {
 //            MyPGP.log2(Text.get("exception.password_needed"));
-            LogWindow.add(e);
+//            LogWindow.add(e);
+            LogWindow.add(Text.get("exception.password_needed"));
             return null;
         }
     }
