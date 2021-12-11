@@ -4,5 +4,5 @@ package gui;
  * @author Jose A. Manas
  */
 public class Version {
-    public static final String VERSION = "MyPGP (19.11.2021)";
+    public static final String VERSION = "MyPGP (11.12.2021)";
 }

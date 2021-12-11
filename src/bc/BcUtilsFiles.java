@@ -334,7 +334,7 @@ public class BcUtilsFiles {
                         String userId = (String) it.next();
                         PGPSignatureSubpacketGenerator signatureSubpacketGenerator =
                                 new PGPSignatureSubpacketGenerator();
-                        signatureSubpacketGenerator.setSignerUserID(false, userId);
+                        signatureSubpacketGenerator.addSignerUserID(false, userId);
                         signatureGenerator.setHashedSubpackets(signatureSubpacketGenerator.generate());
                     }
                     signatureGenerator.generateOnePassVersion(false).encode(compressedOut);

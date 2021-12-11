@@ -182,7 +182,7 @@ public class BcUtilsClipboard {
         signatureGenerator.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, privateKey);
         Iterator userIDs = publicKey.getUserIDs();
         if (userIDs.hasNext()) {
-            spGen.setSignerUserID(false, (String) userIDs.next());
+            spGen.addSignerUserID(false, (String) userIDs.next());
             signatureGenerator.setHashedSubpackets(spGen.generate());
         }
 
@@ -273,7 +273,7 @@ public class BcUtilsClipboard {
         if (it.hasNext()) {
             String userId = (String) it.next();
             PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator();
-            spGen.setSignerUserID(false, userId);
+            spGen.addSignerUserID(false, userId);
             sGen.setHashedSubpackets(spGen.generate());
         }
         sGen.generateOnePassVersion(false).encode(compressedOut);
