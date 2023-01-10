@@ -22,6 +22,8 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -54,15 +56,15 @@ public class KeyGenerator {
     // The maximum you can go to is 0xff, or about 2 million iterations.
     // I'll use 0xc0 as a default -- about 130,000 iterations.
 
-    private Date now = new Date();
+    private final Date now = new Date();
 
-    private File directory;
-    private String signAlgo;
-    private String encryptAlgo;
-    private Date expireDate;
-    private char[] password;
+    private final File directory;
+    private final String signAlgo;
+    private final String encryptAlgo;
+    private final Date expireDate;
+    private final char[] password;
     private String userId;
-    private String filename;
+    private final String filename;
 
     public KeyGenerator(File directory,
                         String signAlgo,
