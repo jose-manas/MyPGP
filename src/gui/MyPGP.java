@@ -666,7 +666,16 @@ public class MyPGP {
         }
 
         try {
-            boolean armor = ArmorPanel.getArmor(action, true, ".pgp");
+            String alt = ".pgp";
+            if (encryptingKeys.size() > 0 && signingKeys.size() > 0)
+                alt = ".pgp, .sig";
+            if (encryptingKeys.size() > 0 && signingKeys.size() == 0)
+                alt = ".pgp";
+            if (encryptingKeys.size() == 0 && signingKeys.size() > 0)
+                alt = ".sig";
+            if (encryptingKeys.size() == 0 && signingKeys.size() == 0)
+                alt = "";
+            boolean armor = ArmorPanel.getArmor(action, true, alt);  // mark 30.1.2023
             EncryptSignWorker worker = new EncryptSignWorker(action, files, encryptingKeys, signingKeys, passwords, armor);
             worker.execute();
         } catch (PasswordCancelled ignored) {
