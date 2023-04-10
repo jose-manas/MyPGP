@@ -33,10 +33,13 @@ public class BcUtilsClipboard {
 
     public static String encrypt(String redText, List<Key> publicKeys)
             throws IOException, PGPException {
-        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
+        List<PGPPublicKey> pgpPublicKeyList = new ArrayList<>();
+        for (Key key: publicKeys)
+            pgpPublicKeyList.add(key.getPublicKey());
+        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(pgpPublicKeyList);
 //        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
-        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
+        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(pgpPublicKeyList);
 
         boolean armor = true;
         boolean withIntegrityCheck = true;
@@ -90,13 +93,12 @@ public class BcUtilsClipboard {
         return baos.toString();
     }
 
-    public static String sign(String redText, Key signerKey, char[] password)
+    public static String sign(String redText, PGPSecretKey secretKey, char[] password)
             throws IOException, PGPException {
         boolean armor = true;
 
         byte[] redBytes = redText.getBytes(StandardCharsets.UTF_8);
 
-        PGPSecretKey secretKey = signerKey.getSigningKey();
         PGPPublicKey publicKey = secretKey.getPublicKey();
         PGPPrivateKey privateKey = BcUtils.getPrivateKey(secretKey, password);
         if (privateKey == null)
@@ -117,13 +119,13 @@ public class BcUtilsClipboard {
         literalDataGenerator.close();
 
         int signAlgo = publicKey.getAlgorithm();
-        int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+        int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
 //        MyPGP.log2(String.format("%s: %s(%s)",
 //                signerKey,
 //                ToString.publicKey(signAlgo),
 //                ToString.hash(hashAlgo)));
         LogWindow.add(String.format("%s: %s(%s)",
-                signerKey,
+                secretKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
 
@@ -162,7 +164,7 @@ public class BcUtilsClipboard {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         int signAlgo = publicKey.getAlgorithm();
-        int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+        int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
 //        MyPGP.log2(String.format("%s: %s(%s)",
 //                signerKey,
 //                ToString.publicKey(signAlgo),
@@ -210,14 +212,19 @@ public class BcUtilsClipboard {
         return baos.toString("UTF-8");
     }
 
-    public static String encrypt_sign(String redText, List<Key> publicKeys, Key signerKey, char[] password)
+    public static String encrypt_sign(String redText,
+                                      List<Key> encryptingKeyList,
+                                      PGPSecretKey signingKey,
+                                      char[] password)
             throws IOException, PGPException {
-        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
+        List<PGPPublicKey> publicKeyList= new ArrayList<>();
+        for (Key key: encryptingKeyList)
+            publicKeyList.add(key.getPublicKey());
+        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeyList);
 //        MyPGP.log2(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
         LogWindow.add(Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
-        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
+        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeyList);
 
-        PGPSecretKey signingKey = signerKey.getSigningKey();
         PGPPublicKey publicKey = signingKey.getPublicKey();
         PGPPrivateKey pgpPrivKey = BcUtils.getPrivateKey(signingKey, password);
         if (pgpPrivKey == null)
@@ -240,8 +247,7 @@ public class BcUtilsClipboard {
                         .setWithIntegrityPacket(withIntegrityCheck)
                         .setSecureRandom(new SecureRandom())
                         .setProvider("BC"));
-        for (Key key : publicKeys) {
-            PGPPublicKey encKey = key.getEncryptingKey();
+        for (PGPPublicKey encKey : publicKeyList) {
             encGen.addMethod(
                     new JcePublicKeyKeyEncryptionMethodGenerator(encKey)
                             .setProvider("BC"));
@@ -253,13 +259,13 @@ public class BcUtilsClipboard {
         OutputStream compressedOut = compressedDataGenerator.open(encryptedOut);
 
         int signAlgo = publicKey.getAlgorithm();
-        int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+        int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
 //        MyPGP.log2(String.format("%s: %s(%s)",
 //                signerKey,
 //                ToString.publicKey(signAlgo),
 //                ToString.hash(hashAlgo)));
         LogWindow.add(String.format("%s: %s(%s)",
-                signerKey,
+                signingKey,
                 ToString.publicKey(signAlgo),
                 ToString.hash(hashAlgo)));
 

@@ -105,9 +105,7 @@ class BcUtils {
         }
         LogWindow.add(String.format("%s: %s", Text.get("signer"), key));
         PGPPublicKey publicKey = key.getPublicKey();
-        ops.init(new JcaPGPContentVerifierBuilderProvider()
-                        .setProvider("BC"),
-                publicKey);
+        ops.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey);
         ops.update(redBytes);
 
         PGPSignature signature = signatureList.get(0);

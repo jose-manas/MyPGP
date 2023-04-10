@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class RingSplitter {
     private final File ringFile;
-    private List<Key> keyList = new ArrayList<>();
+    private final List<Key> keyList = new ArrayList<>();
 
     public RingSplitter(File ringFile) {
         this.ringFile = ringFile;
@@ -179,8 +179,11 @@ public class RingSplitter {
             if (key.getId() == id)
                 return key;
         }
-        Key masterKey = new Key(pgpSecretKey);
-        keyList.add(masterKey);
-        return masterKey;
+        id = pgpSecretKey.getPublicKey().getKeyID();
+        for (Key key : keyList) {
+            if (key.getId() == id)
+                return key;
+        }
+        return null;
     }
 }

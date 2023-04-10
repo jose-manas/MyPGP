@@ -16,10 +16,7 @@ import org.bouncycastle.openpgp.operator.jcajce.*;
 import javax.swing.*;
 import java.io.*;
 import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Jose A. Manas
@@ -39,9 +36,12 @@ public class BcUtilsFiles {
      */
     public static void encrypt(File redFile, List<Key> publicKeys, boolean armor, EncryptSignWorker worker)
             throws Exception {
-        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeys);
+        List<PGPPublicKey> pgpPublicKeyList= new ArrayList<>();
+        for (Key key: publicKeys)
+            pgpPublicKeyList.add(key.getPublicKey());
+        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(pgpPublicKeyList);
         tolog(worker, Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
-        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeys);
+        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(pgpPublicKeyList);
 
 //        boolean armor = true;
         boolean withIntegrityCheck = true;
@@ -107,16 +107,15 @@ public class BcUtilsFiles {
      * Sign one file.
      *
      * @param inFile    file to sign.
-     * @param signerKey signer.
+     * @param secretKey signer.
      * @param password  password for private key.
      * @param armor     true means asc file (text).
      * @throws Exception if anything goes wrong.
      */
-    public static void sign(File inFile, Key signerKey, char[] password, boolean armor, MyWorker worker)
+    public static void sign(File inFile, PGPSecretKey secretKey, char[] password, boolean armor, MyWorker worker)
             throws Exception {
 //        boolean armor = false;
 
-        PGPSecretKey secretKey = signerKey.getSigningKey();
         PGPPublicKey publicKey = secretKey.getPublicKey();
         PGPPrivateKey privateKey = BcUtils.getPrivateKey(secretKey, password);
         if (privateKey == null)
@@ -130,7 +129,7 @@ public class BcUtilsFiles {
                 OutputStream out = getOutputStream(armor, os)
         ) {
             int signAlgo = publicKey.getAlgorithm();
-            int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+            int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
             tolog(worker, String.format("%s: %s(%s)",
                         Text.get("sign"),
                         ToString.publicKey(signAlgo),
@@ -205,7 +204,7 @@ public class BcUtilsFiles {
                 PGPPrivateKey privateKey = privateKeys[i];
 
                 int signAlgo = publicKey.getAlgorithm();
-                int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+                int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
                 tolog(worker, String.format("%s: %s(%s)",
                         Text.get("sign"),
                         ToString.publicKey(signAlgo),
@@ -237,22 +236,25 @@ public class BcUtilsFiles {
      * Sign encrypt one file.
      *
      * @param redFile        file to sign & encrypt.
-     * @param signerKeyList  signers.
-     * @param encryptingKeys destinations.
+     * @param encryptingKeyList destinations.
+     * @param signingKeyList  signers.
      * @param passwords      signers' passwords.
      * @param armor          true means asc file (text).
      * @param worker
      * @throws Exception if anything goes wrong.
      */
     public static void encrypt_sign(File redFile,
-                                    List<Key> signerKeyList,
-                                    List<Key> encryptingKeys,
+                                    List<Key> encryptingKeyList,
+                                    List<Key> signingKeyList,
                                     Map<Key, char[]> passwords,
                                     boolean armor, EncryptSignWorker worker)
             throws Exception {
-        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(encryptingKeys);
+        List<PGPPublicKey> publicKeyList= new ArrayList<>();
+        for (Key key: encryptingKeyList)
+            publicKeyList.add(key.getPublicKey());
+        int encryptAlgo = AlgorithmSelection.getEncryptAlgo(publicKeyList);
         tolog(worker, Text.get("encrypt") + ": " + ToString.symmetricKey(encryptAlgo));
-        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(encryptingKeys);
+        int compressionAlgo = AlgorithmSelection.getCompressionAlgo(publicKeyList);
 
 //        boolean armor = true;
         boolean withIntegrityCheck = true;
@@ -273,7 +275,7 @@ public class BcUtilsFiles {
             PGPEncryptedDataGenerator encryptedDataGenerator =
                     new PGPEncryptedDataGenerator(encryptorBuilder);
 
-            for (Key key : encryptingKeys) {
+            for (Key key : encryptingKeyList) {
                 PGPPublicKey encryptingKey = key.getEncryptingKey();
                 JcePublicKeyKeyEncryptionMethodGenerator keyEncryptionMethodGenerator =
                         new JcePublicKeyKeyEncryptionMethodGenerator(encryptingKey)
@@ -281,7 +283,7 @@ public class BcUtilsFiles {
                 encryptedDataGenerator.addMethod(keyEncryptionMethodGenerator);
             }
 
-            encrypt_sign_1(blackFile, redFile, out, signerKeyList, compressionAlgo, passwords,
+            encrypt_sign_1(blackFile, redFile, out, signingKeyList, compressionAlgo, passwords,
                     encryptedDataGenerator, worker);
             encryptedDataGenerator.close();
         }
@@ -316,7 +318,7 @@ public class BcUtilsFiles {
                     PGPPrivateKey privateKey = privateKeys[i];
 
                     int signAlgo = publicKey.getAlgorithm();
-                    int hashAlgo = AlgorithmSelection.getHashAlgo(signerKey);
+                    int hashAlgo = AlgorithmSelection.getHashAlgo(publicKey);
                     tolog(worker, String.format("%s: %s(%s)",
                                         Text.get("sign"),
                                         ToString.publicKey(signAlgo),

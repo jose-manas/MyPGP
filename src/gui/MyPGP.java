@@ -1,6 +1,9 @@
 package gui;
 
-import bc.*;
+import bc.AlgorithmSelection;
+import bc.BcUtilsClipboard;
+import bc.KeySaver;
+import bc.ToString;
 import crypto.GetPassword;
 import crypto.SecureDeleter;
 import exception.MyLogger;
@@ -20,7 +23,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import keys.RingSplitter;
+import org.bouncycastle.openpgp.PGPSecretKey;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicArrowButton;
@@ -340,7 +343,7 @@ public class MyPGP {
         keyNode.add(new DefaultMutableTreeNode(key.getCorePresentation()));
         DefaultMutableTreeNode detailNode = new DefaultMutableTreeNode(key.getIdFingerprint());
         keyNode.add(detailNode);
-        PGPPublicKey publicKey = key.getPublicKey();
+        PGPPublicKey publicKey = key.getMasterKey();
         PGPPublicKey encryptingKey = key.getEncryptingKey();
         StringBuilder builder = new StringBuilder();
         builder.append(ToString.publicKey(publicKey.getAlgorithm()))
@@ -367,7 +370,7 @@ public class MyPGP {
                 if (signerKey == null)
                     signers.add(new DefaultMutableTreeNode(String.format("[%s]", Key.mkId8(sid))));
                 else if (hierarchy.contains(sid))
-                    signers.add(new DefaultMutableTreeNode(String.format("[%s] %s", Key.mkId8(sid), signerKey.toString())));
+                    signers.add(new DefaultMutableTreeNode(String.format("[%s] %s", Key.mkId8(sid), signerKey)));
                 else
                     signers.add(mkTreeKey(signerKey, extHierarchy));
             }
@@ -647,8 +650,8 @@ public class MyPGP {
 
     private static void encrypt_sign_Selection(File[] files) {
         String action = Text.get("encrypt_sign");
-        List<Key> encryptingKeys = getEncryptingKeys();
-        List<Key> signingKeys = getSigningKeys();
+        List<Key> encryptingKeys = getPublicKeys();
+        List<Key> signingKeys = getSecretKeys();
         if (encryptingKeys.size() + signingKeys.size() == 0)
             return;
 
@@ -773,7 +776,7 @@ public class MyPGP {
         return all;
     }
 
-    private static List<Key> getSigningKeys() {
+    private static List<Key> getSecretKeys() {
         List<Key> keys = new ArrayList<>();
         for (Key key : getSecretKeys(true)) {
             if (key.getSigningKey() != null)
@@ -828,15 +831,16 @@ public class MyPGP {
         return keyLists;
     }
 
-    private static List<Key> getEncryptingKeys() {
-        List<Key> keys = new ArrayList<>();
+    private static List<Key> getPublicKeys() {
+        List<Key> keyList = new ArrayList<>();
         for (Key key : getPublicKeys(true)) {
-            if (key.getEncryptingKey() != null)
-                keys.add(key);
+            PGPPublicKey encryptingKey = key.getEncryptingKey();
+            if (encryptingKey != null)
+                keyList.add(key);
         }
-        for (Key key : keys)
+        for (Key key : keyList)
             LogWindow.encryptingFor(key);
-        return keys;
+        return keyList;
     }
 
     private static List<DefaultMutableTreeNode> getLists(boolean checked) {
@@ -899,7 +903,7 @@ public class MyPGP {
 
             Map<Key, char[]> passwords = new HashMap<>();
             LogWindow.add(Text.get("sign"));
-            List<Key> signingKeys = getSigningKeys();
+            List<Key> signingKeys = getSecretKeys();
             if (signingKeys.isEmpty()) {
                 LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), signingKeys.size()));
                 return;
@@ -917,7 +921,7 @@ public class MyPGP {
                 return;
             }
 
-            SignWorker worker= new SignWorker(action, files, signingKeys, passwords, armor);
+            SignWorker worker = new SignWorker(action, files, signingKeys, passwords, armor);
             worker.execute();
         }
     }
@@ -988,8 +992,8 @@ public class MyPGP {
         public void actionPerformed(ActionEvent event) {
             String action = Text.get("encrypt");
 
-            List<Key> encryptingKeys = getEncryptingKeys();
-            if (encryptingKeys.size() == 0) {
+            List<Key> keyList = getPublicKeys();
+            if (keyList.size() == 0) {
                 LogWindow.log(String.format("%s: 0%n", Text.get("public_keys")));
                 return;
             }
@@ -997,7 +1001,7 @@ public class MyPGP {
             LogWindow.add(action + " " + Text.get("clipboard"));
             try {
                 String redText = MyClipBoard.readString();
-                String blackText = BcUtilsClipboard.encrypt(redText, encryptingKeys);
+                String blackText = BcUtilsClipboard.encrypt(redText, keyList);
                 MyClipBoard.write(blackText);
             } catch (PGPException e) {
                 LogWindow.add(e);
@@ -1019,12 +1023,12 @@ public class MyPGP {
             String action = Text.get("sign");
 
             LogWindow.add(action + " " + Text.get("clipboard"));
-            List<Key> signingKeys = getSigningKeys();
-            if (signingKeys.size() != 1) {
-                LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), signingKeys.size()));
+            List<Key> keyList = getSecretKeys();
+            if (keyList.size() != 1) {
+                LogWindow.add(String.format("%s: %d%n", Text.get("secret_keys"), keyList.size()));
                 return;
             }
-            Key signingKey = signingKeys.get(0);
+            Key signingKey = keyList.get(0);
             try {
                 String redText = MyClipBoard.readString();
                 String label = action + ": " + signingKey;
@@ -1060,15 +1064,15 @@ public class MyPGP {
         try {
             LogWindow.add(action);
             LogWindow.add(Text.get("clipboard"));
-            List<Key> encryptingKeys = getEncryptingKeys();
-            List<Key> signingKeys = getSigningKeys();
+            List<Key> encryptingKeys = getPublicKeys();
+            List<Key> signingKeys = getSecretKeys();
             if (encryptingKeys.size() + signingKeys.size() == 0)
                 return;
 
-            Key signingKey = null;
+            PGPSecretKey signingKey = null;
             if (signingKeys.size() > 0) {
                 try {
-                    signingKey = signingKeys.get(0);
+                    signingKey = signingKeys.get(0).getSigningKey();
                     String label = Text.get("sign") + ": " + signingKey;
                     password = GetPassword.getInstance().getDecryptionPassword(label);
                 } catch (PasswordCancelled passwordCancelled) {

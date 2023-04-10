@@ -99,12 +99,12 @@ public class Directory {
     }
 
     private static void loadSecretRing(Directory directory, File child, PGPSecretKeyRing ring) {
-        PGPSecretKey masterKey = null;
+        PGPPublicKey masterKey = null;
         Iterator keyIterator = ring.getSecretKeys();
         while (keyIterator.hasNext()) {
             PGPSecretKey pgpSecretKey = (PGPSecretKey) keyIterator.next();
             if (pgpSecretKey.isMasterKey())
-                masterKey = pgpSecretKey;
+                masterKey = pgpSecretKey.getPublicKey();
             Key key = KeyDB2.store(masterKey, pgpSecretKey);
             directory.add(child, key);
         }
@@ -114,8 +114,6 @@ public class Directory {
         if (key == null)
             return;
         key.setFile(file);
-        if (!key.isMasterKey())
-            return;
         for (Key k : keys) {
             if (k.getId() == key.getId())
                 return;

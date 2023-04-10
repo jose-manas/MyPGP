@@ -41,7 +41,7 @@ public class EncryptSignWorker
             LogWindow.add(redFile.getName());
             try {
                 if (encryptingKeys.size() > 0 && signingKeys.size() > 0)
-                    BcUtilsFiles.encrypt_sign(redFile, signingKeys, encryptingKeys, passwords, armor, this);
+                    BcUtilsFiles.encrypt_sign(redFile, encryptingKeys, signingKeys, passwords, armor, this);
                 if (encryptingKeys.size() > 0 && signingKeys.size() == 0)
                     BcUtilsFiles.encrypt(redFile, encryptingKeys, armor, this);
                 if (encryptingKeys.size() == 0 && signingKeys.size() > 0)

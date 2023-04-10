@@ -29,39 +29,49 @@ public class Key
             PGPSignature.DEFAULT_CERTIFICATION
     };
 
-    private PGPPublicKey publicKey;
-    private PGPSecretKey secretKey;
+    private final PGPPublicKey masterKey;
+    private final Map<Long, PGPPublicKey> publicKeyList = new HashMap<>();
+    private final Map<Long, PGPSecretKey> secretKeyList = new HashMap<>();
 
-    private String kid;
-    private String kid8;
-    private String kcreation;
+    private final String kid;
+    private final String kid8;
+    private final String kcreation;
     private String kexp;
     private String name;
     private List<String> moreNames;
     private String alias;
-    private String fingerprint;
-    private Set<File> fileList = new HashSet<>();
+    private final String fingerprint;
+    private final Set<File> fileList = new HashSet<>();
 
     private String corePresentation;
-    private Map<Long, PGPPublicKey> publicSubkeys = new HashMap<>();
-    private Map<Long, PGPSecretKey> secretSubkeys = new HashMap<>();
     private final Set<Long> signerIds = new HashSet<>();
 
-    public Key(PGPPublicKey publicKey) {
-        setPublicKey(publicKey);
-    }
-
-    public Key(PGPSecretKey secretKey) {
-        setSecretKey(secretKey);
+    public Key(PGPPublicKey masterKey) {
+        this.masterKey = masterKey;
+        loadNames(masterKey.getUserIDs());
+        kid = String.format("%016X", masterKey.getKeyID());
+        kid8 = kid.substring((kid.length() - 8));
+//        System.out.println("public: [" + kid8 + "] " + name);
+        Date creationDate = masterKey.getCreationTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("d.M.yyyy");
+        kcreation = sdf.format(creationDate);
+        long validSeconds = masterKey.getValidSeconds();
+        if (validSeconds > 0) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(creationDate);
+            calendar.add(Calendar.SECOND, (int) validSeconds);
+            kexp = sdf.format(calendar.getTime());
+        }
+        fingerprint = Hex.toHexString(masterKey.getFingerprint());
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Key key = (Key) o;
-
         return kid != null ? kid.equals(key.kid) : key.kid == null;
     }
 
@@ -104,9 +114,9 @@ public class Key
                 continue;
             if (getId() == sid)
                 continue;
-            if (publicSubkeys.containsKey(sid))
+            if (publicKeyList.containsKey(sid))
                 continue;
-            if (secretSubkeys.containsKey(sid))
+            if (secretKeyList.containsKey(sid))
                 continue;
             shortList.add(sid);
         }
@@ -166,7 +176,7 @@ public class Key
         return alias != null && alias.length() > 0;
     }
 
-    public Object getCorePresentation() {
+    public String getCorePresentation() {
         if (corePresentation == null) {
             StringBuilder builder = new StringBuilder();
             if (kcreation != null) {
@@ -202,86 +212,32 @@ public class Key
     }
 
     public boolean isSecret() {
-        return secretKey != null;
-    }
-
-    @SuppressWarnings("SimplifiableIfStatement")
-    public boolean isMasterKey() {
-        if (publicKey != null)
-            return publicKey.isMasterKey();
-        if (secretKey != null)
-            return secretKey.isMasterKey();
-        return false;
+        return secretKeyList.size() > 0;
     }
 
     public long getId() {
-        if (publicKey != null)
-            return publicKey.getKeyID();
-        if (secretKey != null)
-            return secretKey.getKeyID();
-        return 0L;
+        return masterKey.getKeyID();
     }
 
-    public PGPPublicKey getPublicKey() {
-        if (publicKey != null)
-            return publicKey;
-        if (secretKey != null)
-            return secretKey.getPublicKey();
-        return null;
-    }
-
-    public void setPublicKey(PGPPublicKey publicKey) {
-        saveSigners(publicKey.getSignatures());
-        if (this.publicKey != null)
-            return;
-        this.publicKey = publicKey;
-
-        loadNames(publicKey.getUserIDs());
-        kid = String.format("%016X", publicKey.getKeyID());
-        kid8 = kid.substring((kid.length() - 8));
-//        System.out.println("public: [" + kid8 + "] " + name);
-        Date creationDate = publicKey.getCreationTime();
-        SimpleDateFormat sdf = new SimpleDateFormat("d.M.yyyy");
-        kcreation = sdf.format(creationDate);
-        long validSeconds = publicKey.getValidSeconds();
-        if (validSeconds > 0) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(creationDate);
-            calendar.add(Calendar.SECOND, (int) validSeconds);
-            kexp = sdf.format(calendar.getTime());
-        }
-        fingerprint = Hex.toHexString(publicKey.getFingerprint());
-    }
-
-    private void setSecretKey(PGPSecretKey secretKey) {
-        saveSigners(secretKey.getPublicKey().getSignatures());
-        if (this.secretKey != null)
-            return;
-        this.secretKey = secretKey;
-        setPublicKey(secretKey.getPublicKey());
+    public PGPPublicKey getMasterKey() {
+        return masterKey;
     }
 
     public void add(PGPPublicKey publicKey) {
-        if (publicKey.isMasterKey())
-            setPublicKey(publicKey);
-        else
-            publicSubkeys.put(publicKey.getKeyID(), publicKey);
+        publicKeyList.put(publicKey.getKeyID(), publicKey);
     }
 
     public void add(PGPSecretKey secretKey) {
-        if (secretKey.isMasterKey())
-            setSecretKey(secretKey);
-        else
-            secretSubkeys.put(secretKey.getKeyID(), secretKey);
+        secretKeyList.put(secretKey.getKeyID(), secretKey);
+        PGPPublicKey publicKey = secretKey.getPublicKey();
+        publicKeyList.put(publicKey.getKeyID(), publicKey);
     }
 
     public PGPPublicKey getEncryptingKey() {
-        for (PGPPublicKey psk : publicSubkeys.values()) {
+        for (PGPPublicKey psk : publicKeyList.values()) {
             if (isValidForEncrypting(psk))
                 return psk;
         }
-        if (isValidForEncrypting(publicKey))
-            return publicKey;
         return null;
     }
 
@@ -297,8 +253,10 @@ public class Key
     }
 
     public PGPSecretKey getSigningKey() {
-        if (secretKey != null && isValidForSigning(secretKey))
-            return secretKey;
+        for (PGPSecretKey secretKey : secretKeyList.values()) {
+            if (isValidForSigning(secretKey))
+                return secretKey;
+        }
         return null;
     }
 
@@ -308,7 +266,7 @@ public class Key
             throw new IllegalArgumentException("key == null");
         if (!key.isSigningKey())
             return false;
-        if (!hasKeyFlags(secretKey.getPublicKey(), KeyFlags.SIGN_DATA))
+        if (!hasKeyFlags(key.getPublicKey(), KeyFlags.SIGN_DATA))
             return false;
         return true;
     }
@@ -340,29 +298,24 @@ public class Key
             int flags = sv.getKeyFlags();
             if (flags == 0)
                 return true;        // no usage restriction
-            if ((flags & keyUsage) == 0)
-                return false;
+            return (flags & keyUsage) != 0;
         }
         return true;
     }
 
     public void show() {
-        if (publicKey != null || publicSubkeys.size() > 0) {
+        if (publicKeyList.size() > 0) {
             System.out.print("  PUBLIC:");
-            if (publicKey != null)
-                System.out.print(" " + mkId8(publicKey.getKeyID()));
             System.out.print(" [");
-            for (Long id : publicSubkeys.keySet())
+            for (Long id : publicKeyList.keySet())
                 System.out.print(" " + mkId8(id));
             System.out.print(" ]");
             System.out.println();
         }
-        if (secretKey != null || secretSubkeys.size() > 0) {
+        if (secretKeyList.size() > 0) {
             System.out.print("  PRIVATE:");
-            if (secretKey != null)
-                System.out.print(" " + mkId8(secretKey.getKeyID()));
             System.out.print(" [");
-            for (Long id : secretSubkeys.keySet())
+            for (Long id : secretKeyList.keySet())
                 System.out.print(" " + mkId8(id));
             System.out.print(" ]");
             System.out.println();
@@ -372,27 +325,6 @@ public class Key
     public static String mkId8(Long id) {
         String s16 = String.format("%016X", id);
         return s16.substring(s16.length() - 8);
-    }
-
-    public void trace() {
-        System.out.print("    " + getKid8());
-        if (publicKey != null) {
-            if (publicKey.isMasterKey())
-                System.out.print(" master");
-            if (publicKey.isEncryptionKey())
-                System.out.print(" encryption");
-            if (publicKey.hasRevocation())
-                System.out.print(" revoked");
-        }
-        if (secretKey != null) {
-            if (secretKey.isMasterKey())
-                System.out.print(" master");
-            if (secretKey.isPrivateKeyEmpty())
-                System.out.print(" privateKeyEmpty");
-            if (secretKey.isSigningKey())
-                System.out.print(" signing");
-        }
-        System.out.println();
     }
 
     public String getEmail() {
@@ -405,19 +337,34 @@ public class Key
         }
     }
 
-    public List<PGPPublicKey> getPublicKeyList() {
-        List<PGPPublicKey> list = new ArrayList<>();
-        list.add(publicKey);
-        list.addAll(publicSubkeys.values());
-        return list;
+    public Collection<PGPPublicKey> getPublicKeyList() {
+        return publicKeyList.values();
     }
 
-    public List<PGPSecretKey> getSecretKeyList() {
-        List<PGPSecretKey> list = new ArrayList<>();
-        if (secretKey != null)
-            list.add(secretKey);
-        list.addAll(secretSubkeys.values());
-        return list;
+    public Collection<PGPSecretKey> getSecretKeyList() {
+        return secretKeyList.values();
+    }
+
+    public PGPPublicKey getPublicKey() {
+        if (publicKeyList.isEmpty())
+            return null;
+        PGPPublicKey key =publicKeyList.get(masterKey.getKeyID());
+        if (key != null)
+            return key;
+        for (PGPPublicKey pk : publicKeyList.values())
+            return pk;
+        return null;
+    }
+
+    public PGPSecretKey getSecretKey() {
+        if (secretKeyList.isEmpty())
+            return null;
+        PGPSecretKey key =secretKeyList.get(masterKey.getKeyID());
+        if (key != null)
+            return key;
+        for (PGPSecretKey sk : secretKeyList.values())
+            return sk;
+        return null;
     }
 
     public Set<File> getFileList() {

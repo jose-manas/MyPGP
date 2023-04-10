@@ -42,10 +42,9 @@ public class AlgorithmSelection {
             PGPSignature.DEFAULT_CERTIFICATION
     };
 
-    public static int getEncryptAlgo(List<Key> publicKeys) {
+    public static int getEncryptAlgo(List<PGPPublicKey> publicKeys) {
         List<Integer> preferences = null;
-        for (Key key : publicKeys) {
-            PGPPublicKey publicKey = key.getPublicKey();
+        for (PGPPublicKey publicKey : publicKeys) {
             int[] algos = getPreferredEncryptionAlgos(publicKey);
             if (algos == null || algos.length == 0)
                 continue;
@@ -92,10 +91,9 @@ public class AlgorithmSelection {
         return HashAlgorithmTags.SHA1;
     }
 
-    static int getHashAlgo(Key signingKey) {
+    static int getHashAlgo(PGPPublicKey pgpPublicKey) {
         List<Integer> preferences = null;
-        PGPPublicKey publicKey = signingKey.getPublicKey();
-        int[] algos = getPreferredHashAlgos(publicKey);
+        int[] algos = getPreferredHashAlgos(pgpPublicKey);
         if (algos != null && algos.length != 0) {
             List<Integer> result = new ArrayList<>();
             for (int algo : algos)
@@ -123,10 +121,9 @@ public class AlgorithmSelection {
         return new int[]{HashAlgorithmTags.SHA1};  // default
     }
 
-    static int getCompressionAlgo(List<Key> publicKeys) {
+    static int getCompressionAlgo(List<PGPPublicKey> publicKeys) {
         List<Integer> preferences = null;
-        for (Key key : publicKeys) {
-            PGPPublicKey publicKey = key.getPublicKey();
+        for (PGPPublicKey publicKey : publicKeys) {
             int[] algos = getPreferredCompressionAlgos(publicKey);
             if (algos == null || algos.length == 0)
                 continue;
