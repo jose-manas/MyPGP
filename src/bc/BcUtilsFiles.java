@@ -74,7 +74,9 @@ public class BcUtilsFiles {
         }
     }
 
-    private static void encrypt_1(OutputStream out, File redFile, int compressionAlgo, PGPEncryptedDataGenerator encryptedDataGenerator) throws IOException, PGPException {
+    private static void encrypt_1(OutputStream out, File redFile, int compressionAlgo,
+                                  PGPEncryptedDataGenerator encryptedDataGenerator)
+            throws IOException, PGPException {
         try (OutputStream encryptedData = encryptedDataGenerator.open(out, new byte[BUFFER_SIZE])) {
             PGPCompressedDataGenerator compressedDataGenerator =
                     new PGPCompressedDataGenerator(compressionAlgo);
@@ -500,7 +502,8 @@ public class BcUtilsFiles {
             throws PGPException, IOException {
         int hashAlgo = signature.getHashAlgorithm();
         int signAlgo = signature.getKeyAlgorithm();
-        tolog(worker, String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        tolog(worker, String.format("%s: %s(%s)", Text.get("signature"),
+                ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getKey(signature.getKeyID());

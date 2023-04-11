@@ -114,7 +114,8 @@ public class BcUtilsClipboard {
         BCPGOutputStream bOut = new BCPGOutputStream(out);
 
         PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
-        OutputStream literalOutputStream = literalDataGenerator.open(bOut, PGPLiteralData.BINARY, "clip", redBytes.length, new Date());
+        OutputStream literalOutputStream =
+                literalDataGenerator.open(bOut, PGPLiteralData.BINARY, "clip", redBytes.length, new Date());
         literalOutputStream.write(redBytes);
         literalDataGenerator.close();
 
@@ -398,7 +399,8 @@ public class BcUtilsClipboard {
         PGPSignature signature = p3.get(0);
         int signAlgo = signature.getKeyAlgorithm();
         int hashAlgo = signature.getHashAlgorithm();
-        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"), ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
+        LogWindow.add(String.format("%s: %s(%s)", Text.get("signature"),
+                ToString.publicKey(signAlgo), ToString.hash(hashAlgo)));
         BcUtils.logSignTime(signature);
 
         Key key = KeyDB2.getKey(signature.getKeyID());

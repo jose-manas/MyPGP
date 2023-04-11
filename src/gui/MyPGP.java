@@ -679,7 +679,8 @@ public class MyPGP {
             if (encryptingKeys.size() == 0 && signingKeys.size() == 0)
                 alt = "";
             boolean armor = ArmorPanel.getArmor(action, true, alt);  // mark 30.1.2023
-            EncryptSignWorker worker = new EncryptSignWorker(action, files, encryptingKeys, signingKeys, passwords, armor);
+            EncryptSignWorker worker =
+                    new EncryptSignWorker(action, files, encryptingKeys, signingKeys, passwords, armor);
             worker.execute();
         } catch (PasswordCancelled ignored) {
         }
