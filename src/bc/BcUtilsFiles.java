@@ -381,7 +381,7 @@ public class BcUtilsFiles {
                 return;
 
             List<PGPPublicKeyEncryptedData> list = BcUtils.getKnownKeyEncryptedData(encryptedDataList);
-            if (list.size() == 0) {
+            if (list.isEmpty()) {
                 tolog(null, Text.get("no_known_key"));
                 return;
             }
