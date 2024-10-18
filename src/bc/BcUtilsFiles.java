@@ -397,7 +397,7 @@ public class BcUtilsFiles {
                 char[] password = passwords.get(id);
                 if (password == null)
                     password = GetPassword.getInstance().getDecryptionPassword(Text.get("decrypt") + ": " + key);
-                if (password == null || password.length == 0)
+                if (password == null)
                     continue;
                 passwords.put(id, password);
                 PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);

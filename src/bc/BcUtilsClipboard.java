@@ -332,7 +332,7 @@ public class BcUtilsClipboard {
             if (key == null)
                 continue;
             char[] password = GetPassword.getInstance().getDecryptionPassword(Text.get("decrypt") + ": " + key);
-            if (password == null || password.length == 0)
+            if (password == null)
                 continue;
             PGPSecretKey pgpSecretKey = KeyDB2.getSecretKey(id);
             sKey = BcUtils.getPrivateKey(pgpSecretKey, password);

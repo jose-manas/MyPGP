@@ -47,7 +47,7 @@ public class KeySaver {
                 if (result != JOptionPane.OK_OPTION)
                     return;
                 newPassword = panel.getPassword();
-                if (newPassword == null || newPassword.length == 0)
+                if (newPassword == null)
                     continue;
                 break;
             }
