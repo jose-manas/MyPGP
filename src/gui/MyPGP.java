@@ -79,8 +79,7 @@ public class MyPGP {
     static {
         LogWindow.log("java home: " + System.getProperty("java.home"));
         LogWindow.log("java version: " + System.getProperty("java.version"));
-        LogWindow.log("BouncyCastle version: " +
-                BouncyCastleProvider.class.getPackage().getImplementationVersion());
+        LogWindow.log("BouncyCastle version: " + new BouncyCastleProvider().getVersion());
         LogWindow.log("HOME: " + Info.getHome());
         LogWindow.log();
     }
